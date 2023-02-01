@@ -1,6 +1,4 @@
-# Legends Arceus (legends-arceus)
-
-Legends Arceus Checklist
+# Vue DataTable
 
 ## Install the dependencies
 ```bash
