@@ -9,8 +9,8 @@ export interface VGridProps {
   columns: VColumn[];
 }
 
-export interface VFilters {
+export type VFilters = {
   [key: string]: string;
-}
+};
 
 export type CellSeparators = 'row' | 'column' | 'cell' | 'none';
