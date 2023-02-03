@@ -3,155 +3,109 @@
     <table-header
       :columns="columns"
       :filter-header="filterHeader"
+      :row-separator-cls="rowSeparatorCls"
+      :col-separator-cls="colSeparatorCls"
       @update-filter="updateFilter"
-    />
+    >
+      <template v-for="(_, name) in $slots" #[name]="slotData">
+        <slot :name="name" v-bind="slotData" />
+      </template>
+    </table-header>
 
-    <div ref="root" class="vdt-tbody" :style="rootStyle" @scroll="onScroll">
-      <div ref="viewport" class="vdt-viewscroller" :style="viewportStyle">
-        <div ref="spacer" class="vdt-spacer" :style="spacerStyle">
-          <div
-            v-for="item in visibleRows"
-            :key="item.id"
-            :style="`height:${rowHeight}px`"
-            class="vdt-row"
-          >
-            <div
-              v-for="col in columns"
-              :key="col.field"
-              :style="`width:${col.width}px;height:${rowHeight}px`"
-              class="vdt-cell"
-            >
-              <div class="vdt-cell-content">
-                {{ item[col.field] }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <virtual-scroller
+      :rows="processedRows"
+      :columns="columns"
+      :row-height="rowHeight"
+    >
+      <template #content="scrollerProps">
+        <table-body
+          :rows="scrollerProps.visibleRows"
+          :row-height="rowHeight"
+          :columns="columns"
+          :row-separator-cls="rowSeparatorCls"
+          :col-separator-cls="colSeparatorCls"
+        >
+          <template v-for="(_, name) in $slots" #[name]="slotData">
+            <slot :name="name" v-bind="slotData" />
+          </template>
+        </table-body>
+      </template>
+    </virtual-scroller>
   </div>
 </template>
 
 <script setup lang="ts">
-import { VColumn, VFilters } from './types';
+import { VColumn, VFilters, CellSeparators } from './types';
 import { computed, onMounted, ref, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
-// // import TableBody from './TableBody.vue';
-// // import VirtualScroller from './VirtualScroller.vue';
-
-const filters = ref<VFilters>({});
-function updateFilter(field: string, value: string): void {
-  if (value) filters[field] = value;
-  else delete filters[field];
-}
-
-function filterFields(): void {
-  return;
-}
+import TableBody from './TableBody.vue';
+import VirtualScroller from './VirtualScroller.vue';
 
 interface VGridProps {
   rows: any[];
   columns: VColumn[];
   filters?: boolean;
   filterHeader?: boolean;
+  separators?: CellSeparators;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
   rows: () => [],
   filters: false,
   filterHeader: false,
+  separators: 'row',
 });
 
-const processedRows = computed(() => processRows(props.rows));
-function processRows(rows: any[]): any[] {
-  return rows;
-}
+const processedRows = ref(props.rows);
+
+watch(
+  () => props.rows,
+  (newRows) => (processedRows.value = newRows)
+);
 
 const rowHeight = 48;
-const nodePadding = 20;
-const rootHeight = 500;
 
-const root = ref(null);
-const viewport = ref(null);
-const spacer = ref(null);
-
-const rowCount = computed(() => processedRows.value.length);
-const viewportHeight = computed(() => rowCount.value * rowHeight);
-
-const scrollTop = ref(0);
-const startNode = computed(() => getStartNode(scrollTop.value));
-const visibleNodesCount = computed(() =>
-  getVisibleNodesCount(startNode.value, rowCount.value)
-);
-const offsetY = computed(() => startNode.value * rowHeight);
-const visibleRows = computed<unknown[]>(() =>
-  getVisibleNodes(startNode.value, startNode.value + visibleNodesCount.value)
+const rowSeparatorCls = computed<string>(() =>
+  props.separators.match(/row|cell/) ? 'vdt-separators-row' : ''
 );
 
-const spacerStyle = computed(() => {
-  return { transform: `translateY(${offsetY.value}px)` };
-});
+const colSeparatorCls = computed<string>(() =>
+  props.separators.match(/column|cell/) ? 'vdt-separators-col' : ''
+);
 
-const viewportStyle = computed(() => {
-  return {
-    overflow: 'hidden',
-    height: viewportHeight.value + 'px',
-    position: 'relative',
-  };
-});
-
-const rootStyle = computed(() => {
-  return {
-    height: rootHeight + 'px',
-    overflow: 'auto',
-  };
-});
-
-// const vsClass = 'vdt-virtualscroller';
-// const contentClass = 'vdt-virtualscroller-content';
-
-function getVisibleNodes(
-  startNode: number,
-  visibleNodesCount: number
-): unknown[] {
-  return processedRows.value.slice(startNode, visibleNodesCount);
+const filters = ref<VFilters>({});
+function updateFilter(field: string, value: string): void {
+  if (value) filters.value[field] = value;
+  else delete filters.value[field];
 }
 
-function getStartNode(scrollTop: number): number {
-  let tmpStart = Math.floor(scrollTop / rowHeight) - nodePadding;
-  return Math.max(0, tmpStart);
+function filterRows(filters: VFilters, rows: any[]): any[] {
+  // no filters, return original rows
+  if (!Object.keys(filters).length) return props.rows;
+
+  return rows.filter((row) => {
+    return Object.keys(filters).every((field) => {
+      return row[field].toLowerCase().includes(filters[field].toLowerCase());
+    });
+  });
 }
 
-function getVisibleNodesCount(startNode: number, rowCount: number): number {
-  const count = Math.ceil(viewportHeight.value / rowHeight) + 2 * nodePadding;
-  return Math.min(rowCount - startNode, count);
-}
-
-function onScroll(event: UIEvent) {
-  const target = event.target as HTMLElement;
-  scrollTop.value = target.scrollTop;
-}
-
-// const containerClass = 'vdt-datatable';
-
-// function rowsToRender(rows: unknown[]) {
-//   const _data = rows;
-//   return _data;
-// }
+watch(
+  filters,
+  (newFilters) =>
+    (processedRows.value = filterRows(newFilters, processedRows.value)),
+  {
+    deep: true,
+  }
+);
 </script>
 
 <style>
-.vdt-row {
-  display: flex;
+.vdt-separators-row {
+  border-bottom: 1px solid white;
 }
 
-.vdt-cell,
-.vdt-cell-content {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vdt-cell {
-  padding: 5px;
+.vdt-separators-col {
+  border-left: 1px solid white;
 }
 </style>

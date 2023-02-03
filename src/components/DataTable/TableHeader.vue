@@ -1,13 +1,22 @@
 <template>
-  <div class="vdt-thead">
+  <div :class="`vdt-thead ${rowSeparatorCls}`">
     <div
       v-for="col in columns"
       :key="col.field"
-      class="vdt-th"
+      :column="col"
+      :class="`vdt-th ${colSeparatorCls}`"
       :style="`width:${col.width}px;`"
     >
       <div class="vdt-th-content">
-        {{ col.header }}
+        <template v-if="$slots[`header-cell-${col.field}`]">
+          <slot :name="`header-cell-${col.field}`"></slot>
+        </template>
+        <template v-else-if="$slots['header-cell']">
+          <slot name="header-cell"></slot>
+        </template>
+        <template v-else>
+          {{ col.header }}
+        </template>
       </div>
 
       <template v-if="filterHeader">
@@ -16,7 +25,9 @@
           type="text"
           :style="`width:${col.width}px;`"
           class="vdt-hdr-filter"
-          @update-model="emit('updateFilter', col.field, filters[col.field])"
+          @update:model-value="
+            emit('updateFilter', col.field, filters[col.field])
+          "
         />
       </template>
     </div>
@@ -24,15 +35,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { VColumn } from './types';
+import { computed, ref } from 'vue';
+import { CellSeparators, VColumn, VFilters } from './types';
 
-const filters = ref({});
+const filters = ref<VFilters>({});
 
-defineProps<{
+interface VHeaderProps {
   columns: VColumn[];
   filterHeader: boolean;
-}>();
+  rowSeparatorCls: string;
+  colSeparatorCls: string;
+}
+
+const props = defineProps<VHeaderProps>();
 
 const emit = defineEmits<{
   (e: 'updateFilter', field: string, value: string): void;
