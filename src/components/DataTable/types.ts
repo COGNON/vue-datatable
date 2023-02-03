@@ -12,3 +12,5 @@ export interface VGridProps {
 export interface VFilters {
   [key: string]: string;
 }
+
+export type CellSeparators = 'row' | 'column' | 'cell' | 'none';
