@@ -1,36 +1,49 @@
 <template>
-  <div class="vdt-table" role="table">
-    <table-header
-      :columns="columns"
-      :filter-header="filterHeader"
-      :row-separator-cls="rowSeparatorCls"
-      :col-separator-cls="colSeparatorCls"
-      @update-filter="updateFilter"
-    >
-      <template v-for="(_, name) in $slots" #[name]="slotData">
-        <slot :name="name" v-bind="slotData" />
-      </template>
-    </table-header>
+  <div>
+    <div v-if="filters && !filterHeader" class="vdt-global-filter">
+      <label for="global-filter">Search</label>
+      <input
+        v-model="globalFilter"
+        type="text"
+        style="width: 200px"
+        name="global-filter"
+        class="vdt-global-filter-input"
+      />
+    </div>
 
-    <virtual-scroller
-      :rows="processedRows"
-      :columns="columns"
-      :row-height="rowHeight"
-    >
-      <template #content="scrollerProps">
-        <table-body
-          :rows="scrollerProps.visibleRows"
-          :row-height="rowHeight"
-          :columns="columns"
-          :row-separator-cls="rowSeparatorCls"
-          :col-separator-cls="colSeparatorCls"
-        >
-          <template v-for="(_, name) in $slots" #[name]="slotData">
-            <slot :name="name" v-bind="slotData" />
-          </template>
-        </table-body>
-      </template>
-    </virtual-scroller>
+    <div class="vdt-table" role="table">
+      <table-header
+        :columns="columns"
+        :filter-header="filterHeader"
+        :row-separator-cls="rowSeparatorCls"
+        :col-separator-cls="colSeparatorCls"
+        @update-filter="updateFilter"
+      >
+        <template v-for="(_, name) in $slots" #[name]="slotData">
+          <slot :name="name" v-bind="slotData" />
+        </template>
+      </table-header>
+
+      <virtual-scroller
+        :rows="processedRows"
+        :columns="columns"
+        :row-height="rowHeight"
+      >
+        <template #content="scrollerProps">
+          <table-body
+            :rows="scrollerProps.visibleRows"
+            :row-height="rowHeight"
+            :columns="columns"
+            :row-separator-cls="rowSeparatorCls"
+            :col-separator-cls="colSeparatorCls"
+          >
+            <template v-for="(_, name) in $slots" #[name]="slotData">
+              <slot :name="name" v-bind="slotData" />
+            </template>
+          </table-body>
+        </template>
+      </virtual-scroller>
+    </div>
   </div>
 </template>
 
@@ -57,7 +70,6 @@ const props = withDefaults(defineProps<VGridProps>(), {
 });
 
 const processedRows = ref(props.rows);
-
 watch(
   () => props.rows,
   (newRows) => (processedRows.value = newRows)
@@ -79,7 +91,16 @@ function updateFilter(field: string, value: string): void {
   else delete filters.value[field];
 }
 
-function filterRows(filters: VFilters, rows: any[]): any[] {
+function filterRows(filters: VFilters | string, rows: any[]): any[] {
+  if (typeof filters === 'string' && filters) {
+    // global filter
+    return rows.filter((row) => {
+      return Object.values(row).some((value) => {
+        return String(value).toLowerCase().includes(filters.toLowerCase());
+      });
+    });
+  }
+
   // no filters, return original rows
   if (!Object.keys(filters).length) return props.rows;
 
@@ -98,6 +119,12 @@ watch(
     deep: true,
   }
 );
+
+const globalFilter = ref();
+watch(globalFilter, (newFilter) => {
+  // use the original rows. if user backspaces from no rows filtered, it will still return no rows
+  processedRows.value = filterRows(newFilter, props.rows);
+});
 </script>
 
 <style>
@@ -107,5 +134,10 @@ watch(
 
 .vdt-separators-col {
   border-left: 1px solid white;
+}
+
+.vdt-global-filter-input {
+  margin-left: 5px;
+  margin-right: 5px;
 }
 </style>

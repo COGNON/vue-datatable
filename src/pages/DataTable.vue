@@ -1,12 +1,6 @@
 <template>
   <div class="q-pa-md">
-    <DataTable
-      :rows="rows"
-      :columns="columns"
-      filters
-      filter-header
-      separators="row"
-    >
+    <DataTable :rows="rows" :columns="columns" filters separators="row">
     </DataTable>
   </div>
 </template>
