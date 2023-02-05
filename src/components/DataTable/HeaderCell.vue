@@ -1,6 +1,9 @@
 <template>
   <div>
-    <span class="vdt-th-content clickable" @click="emit('updateSorter')">
+    <span
+      class="vdt-th-content clickable"
+      @click="(e: MouseEvent) => emit('updateSorter',e)"
+    >
       <slot name="header-cell">
         {{ column.header }}
       </slot>
@@ -26,7 +29,7 @@ const sorterIcon = computed(() =>
 );
 
 const emit = defineEmits<{
-  (e: 'updateSorter'): void;
+  (e: 'updateSorter', event: MouseEvent): void;
 }>();
 </script>
 

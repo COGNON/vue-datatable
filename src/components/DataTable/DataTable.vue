@@ -70,7 +70,6 @@ interface VGridProps {
   filters?: boolean | VFilters;
   filterHeader?: boolean;
   separators?: CellSeparators;
-  multiSort?: boolean;
   filterComponent?: Component;
   filterComponentProps?: any;
 }
@@ -79,7 +78,6 @@ const props = withDefaults(defineProps<VGridProps>(), {
   rows: () => [],
   filters: false,
   filterHeader: false,
-  multiSort: false,
   separators: 'row',
   filterComponent: FilterComponent,
   filterComponentProps: {},
@@ -147,8 +145,9 @@ watch(sorters, () => (processedRows.value = sortRows(processedRows.value)), {
   deep: true,
 });
 
-function updateSorters(field: string): void {
-  if (props.multiSort) {
+function updateSorters(e: MouseEvent, field: string): void {
+  if (e.ctrlKey) {
+    // multi-sort key
     if (!sorters.value[field]) {
       // sorter doesn't exist, add to end
       const curSortersNum = Object.keys(sorters.value).length;
@@ -190,12 +189,44 @@ function updateSorters(field: string): void {
       }
     }
   }
-
-  console.log(sorters.value);
 }
 
 function sortRows(rows: any[]): any[] {
   if (!Object.keys(sorters.value).length) return rows;
+
+  // sort by num in order, then convert fields into an array
+  // descending fields are prepended with a '-'
+  const fields = Object.values(sorters.value)
+    .sort((a, b) => a.num - b.num)
+    .map((sorter) =>
+      sorter.dir === 'des' ? `-${sorter.field}` : sorter.field
+    );
+
+  return rows.sort(multiSort(fields));
+}
+
+function multiSort(fields: string[]) {
+  const dir: number[] = [];
+  const len = fields.length;
+
+  fields = fields.map((o, i) => {
+    if (o[0] === '-') {
+      dir[i] = -1;
+      o = o.substring(1);
+    } else {
+      dir[i] = 1;
+    }
+    return o;
+  });
+
+  return (a: any, b: any): number => {
+    for (let i = 0; i < len; i++) {
+      const o = fields[i];
+      if (a[o] > b[o]) return dir[i];
+      if (a[o] < b[o]) return -dir[i];
+    }
+    return 0;
+  };
 }
 </script>
 

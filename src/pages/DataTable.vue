@@ -5,7 +5,6 @@
       :columns="columns"
       filters
       filter-header
-      multi-sort
       separators="row"
       :filter-component="QInput"
       :filter-component-props="{ dense: true, filled: true, label: 'Search' }"

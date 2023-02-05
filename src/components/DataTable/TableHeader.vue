@@ -7,7 +7,7 @@
       :class="`vdt-th ${colSeparatorCls}`"
       :style="`width:${col.width}px;`"
       :sorter="sorters[col.field]"
-      @update-sorter="emit('updateSorter', col.field)"
+      @update-sorter="(e: MouseEvent) => emit('updateSorter', e, col.field)"
     >
       <template v-if="$slots[`header-cell-${col.field}`]" #header-cell>
         <slot :name="`header-cell-${col.field}`"></slot>
@@ -38,7 +38,7 @@ interface VHeaderProps {
 const props = defineProps<VHeaderProps>();
 
 const emit = defineEmits<{
-  (e: 'updateSorter', field: string): void;
+  (e: 'updateSorter', event: MouseEvent, field: string): void;
 }>();
 </script>
 
