@@ -13,4 +13,14 @@ export type VFilters = {
   [key: string]: string;
 };
 
+export type VSorterData = {
+  field: string;
+  dir: 'asc' | 'des';
+  num: number;
+};
+
+export interface VSorter {
+  [key: string]: VSorterData;
+}
+
 export type CellSeparators = 'row' | 'column' | 'cell' | 'none';
