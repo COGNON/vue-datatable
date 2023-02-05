@@ -1,68 +1,53 @@
 <template>
   <div :class="`vdt-thead ${rowSeparatorCls}`">
-    <div
+    <header-cell
       v-for="col in columns"
       :key="col.field"
       :column="col"
       :class="`vdt-th ${colSeparatorCls}`"
       :style="`width:${col.width}px;`"
+      :sorter="sorters[col.field]"
+      @update-sorter="(e: MouseEvent) => emit('updateSorter', e, col.field)"
     >
-      <div class="vdt-th-content">
-        <template v-if="$slots[`header-cell-${col.field}`]">
-          <slot :name="`header-cell-${col.field}`"></slot>
-        </template>
-        <template v-else-if="$slots['header-cell']">
-          <slot name="header-cell"></slot>
-        </template>
-        <template v-else>
-          {{ col.header }}
-        </template>
-      </div>
-
-      <template v-if="filterHeader">
-        <input
-          v-model="filters[col.field]"
-          type="text"
-          :style="`width:${col.width}px;`"
-          class="vdt-hdr-filter"
-          @update:model-value="
-            emit('updateFilter', col.field, filters[col.field])
-          "
-        />
+      <template v-if="$slots[`header-cell-${col.field}`]" #header-cell>
+        <slot :name="`header-cell-${col.field}`"></slot>
       </template>
-    </div>
+      <template v-else-if="$slots['header-cell']" #header-cell>
+        <slot name="header-cell"></slot>
+      </template>
+
+      <template #filter>
+        <slot name="filter" :col="col"> </slot>
+      </template>
+    </header-cell>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { CellSeparators, VColumn, VFilters } from './types';
-
-const filters = ref<VFilters>({});
+import { type Component, computed, ref } from 'vue';
+import { CellSeparators, VColumn, VFilters, VSorter } from './types';
+import HeaderCell from './HeaderCell.vue';
 
 interface VHeaderProps {
   columns: VColumn[];
-  filterHeader: boolean;
   rowSeparatorCls: string;
   colSeparatorCls: string;
+  sorters: VSorter;
 }
 
 const props = defineProps<VHeaderProps>();
 
 const emit = defineEmits<{
-  (e: 'updateFilter', field: string, value: string): void;
+  (e: 'updateSorter', event: MouseEvent, field: string): void;
 }>();
 </script>
 
-<style>
+<style scoped>
 .vdt-thead {
   display: flex;
 }
 
 .vdt-th {
   padding: 5px;
-}
-
-.vdt-hdr-filter {
 }
 </style>
