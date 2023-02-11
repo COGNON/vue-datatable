@@ -1,14 +1,6 @@
 <template>
   <div class="q-pa-md">
-    <DataTable
-      :rows="rows"
-      :columns="columns"
-      filters
-      filter-header
-      separators="row"
-      :filter-component="QInput"
-      :filter-component-props="{ dense: true, filled: true, label: 'Search' }"
-    >
+    <DataTable :rows="rows" :columns="columns" filter-header separators="row">
     </DataTable>
   </div>
 </template>
@@ -16,7 +8,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import DataTable from 'src/components/DataTable/DataTable.vue';
-import { QInput } from 'quasar';
 
 const rows = ref([]);
 const columns = [

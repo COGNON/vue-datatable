@@ -1,8 +1,7 @@
 <template>
   <div>
-    <div v-if="filters && !filterHeader" class="vdt-global-filter">
-      <component
-        :is="filterComponent"
+    <div v-if="filterGlobal" class="vdt-global-filter">
+      <q-input
         v-model="globalFilter"
         style="width: 200px"
         class="vdt-global-filter-input"
@@ -19,12 +18,11 @@
         @update-sorter="updateSorters"
       >
         <template v-for="(_, name) in $slots" #[name]="slotData">
-          <slot :name="name" v-bind="slotData" />
+          <slot :name="name" v-bind="slotData"></slot>
         </template>
 
         <template v-if="filterHeader" #filter="colProps">
-          <component
-            :is="filterComponent"
+          <q-input
             v-model="filters[colProps.col.field]"
             :style="`width:${colProps.col.width}px;`"
             class="vdt-hdr-filter"
@@ -47,7 +45,7 @@
             :col-separator-cls="colSeparatorCls"
           >
             <template v-for="(_, name) in $slots" #[name]="slotData">
-              <slot :name="name" v-bind="slotData" />
+              <slot :name="name" v-bind="slotData"></slot>
             </template>
           </table-body>
         </template>
@@ -58,20 +56,19 @@
 
 <script setup lang="ts">
 import { VColumn, VFilters, CellSeparators, VSorter } from './types';
-import { type Component, computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
 import FilterComponent from './FilterComponent.vue';
+import { QInputProps } from 'quasar';
 
 interface VGridProps {
   rows: any[];
   columns: VColumn[];
-  filters?: boolean | VFilters;
+  filterGlobal?: boolean;
   filterHeader?: boolean;
   separators?: CellSeparators;
-  filterComponent?: Component;
-  filterComponentProps?: any;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -100,6 +97,12 @@ const colSeparatorCls = computed<string>(() =>
 );
 
 const filters = ref<VFilters>({});
+
+const filterComponentProps: Partial<QInputProps> = {
+  dense: true,
+  filled: true,
+  label: 'Search',
+};
 
 function filterRows(filters: VFilters | string, rows: any[]): any[] {
   if (typeof filters === 'string' && filters) {
