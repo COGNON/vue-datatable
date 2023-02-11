@@ -1,34 +1,42 @@
 <template>
-  <div
+  <table-row
     v-for="item in rows"
     :key="item.id"
-    :style="`height:${rowHeight}px`"
-    :class="`vdt-row ${rowSeparatorCls}`"
+    :row="item"
+    :row-height="rowHeight"
+    :row-separator-cls="rowSeparatorCls"
+    :col-separator-cls="colSeparatorCls"
   >
-    <div
-      v-for="col in columns"
-      :key="col.field"
-      :style="`width:${col.width}px;height:${rowHeight}px`"
-      :class="`vdt-cell ${colSeparatorCls}`"
-    >
-      <div class="vdt-cell-content">
-        <template v-if="$slots[`body-cell-${col.field}`]">
-          <slot :name="`body-cell-${col.field}`"></slot>
-        </template>
-        <template v-else-if="$slots['body-cell']">
-          <slot name="body-cell"></slot>
-        </template>
-        <template v-else>
-          {{ item[col.field] }}
-        </template>
+    <template #cells>
+      <div
+        v-for="col in columns"
+        :key="col.field"
+        :style="`width:${col.width}px;height:${rowHeight}px`"
+        :class="`vdt-cell ${colSeparatorCls}`"
+      >
+        <div class="vdt-cell-content">
+          <template v-if="$slots[`body-cell-${col.field}`]">
+            <slot :name="`body-cell-${col.field}`"></slot>
+          </template>
+          <template v-else-if="$slots['body-cell']">
+            <slot name="body-cell"></slot>
+          </template>
+          <template v-else>
+            {{ item[col.field] }}
+          </template>
+        </div>
       </div>
-    </div>
-  </div>
+    </template>
+
+    <template v-if="$slots['expanded']" #expanded="rowProps">
+      <slot name="expanded" v-bind="rowProps"></slot>
+    </template>
+  </table-row>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { CellSeparators, VColumn } from './types';
+import { VColumn } from './types';
+import TableRow from './TableRow.vue';
 
 interface VScrollerProps {
   rows: any[];
@@ -38,17 +46,13 @@ interface VScrollerProps {
   colSeparatorCls: string;
 }
 
-const props = withDefaults(defineProps<VScrollerProps>(), {
+withDefaults(defineProps<VScrollerProps>(), {
   rows: () => [],
   rowHeight: 48,
 });
 </script>
 
 <style>
-.vdt-row {
-  display: flex;
-}
-
 .vdt-cell,
 .vdt-cell-content {
   overflow: hidden;

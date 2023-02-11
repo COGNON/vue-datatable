@@ -1,5 +1,7 @@
 <template>
   <div :class="`vdt-thead ${rowSeparatorCls}`">
+    <div v-if="$slots['expanded']" style="width: 60px"></div>
+
     <header-cell
       v-for="col in columns"
       :key="col.field"
@@ -17,7 +19,7 @@
       </template>
 
       <template #filter>
-        <slot name="filter" :col="col"> </slot>
+        <slot name="filter" :col="col"></slot>
       </template>
     </header-cell>
   </div>
