@@ -1,17 +1,25 @@
 <template>
-  <div>
-    <span
-      class="vdt-th-content clickable"
-      @click="(e: MouseEvent) => emit('updateSorter',e)"
-    >
-      <slot name="header-cell">
-        {{ column.header }}
-      </slot>
-    </span>
+  <div class="vdt-th">
+    <div class="vdt-th--content">
+      <span
+        class="vdt-column--resizer"
+        @mousedown="(e) => $emit('onResizeStart', e)"
+      ></span>
+      <span
+        class="vdt-th-content clickable"
+        @click="(e) => $emit('updateSorter', e)"
+      >
+        <slot name="header-cell">
+          {{ column.header }}
+        </slot>
+      </span>
 
-    <span v-if="sorter" :class="`mdi mdi-sort-${sorterIcon}`"> </span>
+      <span v-if="sorter" :class="`mdi mdi-sort-${sorterIcon}`"></span>
+    </div>
 
-    <slot name="filter"></slot>
+    <div class="vdt-th--filter">
+      <slot name="filter"></slot>
+    </div>
   </div>
 </template>
 
@@ -28,13 +36,30 @@ const sorterIcon = computed(() =>
   props.sorter ? (props.sorter.dir === 'asc' ? 'ascending' : 'descending') : ''
 );
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'updateSorter', event: MouseEvent): void;
+  (e: 'onResizeStart', event: MouseEvent): void;
 }>();
 </script>
 
-<style>
+<style lang="scss" scoped>
+.vdt-th {
+  position: relative;
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
+}
 .vdt-th-content {
   margin: 5px;
+}
+.vdt-column--resizer {
+  display: block;
+  position: absolute !important;
+  top: 0;
+  right: 0;
+  margin: 0;
+  width: 0.5rem;
+  height: 100%;
+  padding: 0px;
+  cursor: col-resize;
+  border: 1px solid transparent;
 }
 </style>

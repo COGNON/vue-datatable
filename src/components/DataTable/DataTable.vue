@@ -9,16 +9,17 @@
       />
     </div>
 
-    <div class="vdt-table" role="table">
+    <div ref="tableRef" class="vdt-table" role="table">
       <table-header
         :columns="columns"
         :row-separator-cls="rowSeparatorCls"
         :col-separator-cls="colSeparatorCls"
         :sorters="sorters"
         @update-sorter="updateSorters"
+        @on-resize-start="onColResizeStart"
       >
         <template v-for="(_, name) in $slots" #[name]="slotData">
-          <slot :name="name" v-bind="slotData"></slot>
+          <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
         </template>
 
         <template v-if="filterHeader" #filter="colProps">
@@ -45,23 +46,28 @@
             :col-separator-cls="colSeparatorCls"
           >
             <template v-for="(_, name) in $slots" #[name]="slotData">
-              <slot :name="name" v-bind="slotData"></slot>
+              <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
             </template>
           </table-body>
         </template>
       </virtual-scroller>
     </div>
+
+    <div ref="resizerRef" class="vdt--resizer"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { VColumn, VFilters, CellSeparators, VSorter } from './types';
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, ref, toRef, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
 import FilterComponent from './FilterComponent.vue';
 import { QInputProps } from 'quasar';
+
+const resizerRef = ref<HTMLElement | undefined>();
+const tableRef = ref<HTMLElement | undefined>();
 
 interface VGridProps {
   rows: any[];
@@ -79,6 +85,8 @@ const props = withDefaults(defineProps<VGridProps>(), {
   filterComponent: FilterComponent,
   filterComponentProps: {},
 });
+
+const columns = reactive(props.columns);
 
 const processedRows = ref(props.rows);
 watch(
@@ -231,27 +239,85 @@ function multiSort(fields: string[]) {
     return 0;
   };
 }
+
+const resizingCol = ref(false);
+let curColEl: HTMLElement | null = null;
+let curColResizing: VColumn | null = null;
+
+let x = 0;
+let diffX = 0;
+
+function onColResizeStart(e: MouseEvent, col: VColumn) {
+  if (!tableRef.value || resizingCol.value) return;
+  e.preventDefault();
+
+  resizingCol.value = true;
+  x = e.clientX;
+  curColResizing = col;
+  curColEl = (e.target as HTMLElement).parentElement;
+
+  document.addEventListener('mousemove', onColResizeMove);
+  document.addEventListener('mouseup', onColResizeEnd);
+}
+
+const onColResizeMove = (e: MouseEvent) => {
+  if (!(tableRef.value && resizerRef.value)) return;
+  e.preventDefault();
+
+  diffX = e.clientX - x;
+
+  resizerRef.value.style.top = tableRef.value.offsetTop + 'px';
+  resizerRef.value.style.height = String(tableRef.value.clientHeight) + 'px';
+  resizerRef.value.style.left = String(e.pageX) + 'px';
+  resizerRef.value.style.display = 'block';
+};
+
+const onColResizeEnd = () => {
+  if (!(curColResizing && resizerRef.value && curColEl)) return;
+
+  resizingCol.value = false;
+
+  const colIdx = columns.findIndex((col) => col.field === curColResizing.field);
+
+  if (colIdx > -1) {
+    columns[colIdx].width = curColEl.offsetWidth + diffX;
+  }
+
+  resizerRef.value.style.display = 'none';
+
+  document.removeEventListener('mousemove', onColResizeMove);
+  document.removeEventListener('mouseup', onColResizeEnd);
+};
 </script>
 
-<style>
+<style scoped>
 .vdt-separators-row {
   border-bottom: 1px solid white;
 }
-
 .vdt-separators-col {
   border-left: 1px solid white;
 }
-
 .vdt-global-filter-input {
   margin-left: 5px;
   margin-right: 5px;
 }
-
 .clickable {
   cursor: pointer;
 }
-
 .vdt-hdr-filter {
   padding: 5px;
+}
+.vdt--resizer {
+  width: 1px;
+  position: absolute;
+  z-index: 10;
+  display: none;
+  border: 1px solid var(--q-accent);
+}
+.vdt-table .vdt-thead > .vdt-th:last-child .vdt-column--resizer {
+  display: none;
+}
+.vdt-table {
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 </style>

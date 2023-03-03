@@ -52,7 +52,7 @@ withDefaults(defineProps<VScrollerProps>(), {
 });
 </script>
 
-<style>
+<style lang="scss" scoped>
 .vdt-cell,
 .vdt-cell-content {
   overflow: hidden;
@@ -61,5 +61,6 @@ withDefaults(defineProps<VScrollerProps>(), {
 
 .vdt-cell {
   padding: 5px;
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
 }
 </style>
