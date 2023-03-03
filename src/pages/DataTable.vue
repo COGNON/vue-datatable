@@ -8,13 +8,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import DataTable from 'src/components/DataTable/DataTable.vue';
+import { VColumn } from 'src/components/DataTable/types';
 
 const rows = ref([]);
-const columns = [
+const columns: VColumn[] = [
   {
     field: 'id',
     header: 'ID',
     width: 100,
+    resizable: true,
   },
   {
     field: 'name',

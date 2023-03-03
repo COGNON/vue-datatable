@@ -2,6 +2,7 @@ export interface VColumn {
   field?: string;
   header: string;
   width?: number;
+  resizable?: boolean;
 }
 
 export interface VGridProps {
