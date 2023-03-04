@@ -15,6 +15,8 @@
         :row-separator-cls="rowSeparatorCls"
         :col-separator-cls="colSeparatorCls"
         :sorters="sorters"
+        :reorderable-columns="reorderableColumns"
+        :resizable-columns="resizableColumns"
         @update-sorter="updateSorters"
         @on-resize-start="onColResizeStart"
         @on-drag-start="onColDragStart"
@@ -57,21 +59,23 @@
       </virtual-scroller>
     </div>
 
-    <div ref="resizerRef" class="vdt--resizer"></div>
-    <div
-      ref="dropColIndicatorDown"
-      class="mdi mdi-arrow-down-bold vdt--drop-indicator"
-    ></div>
-    <div
-      ref="dropColIndicatorUp"
-      class="mdi mdi-arrow-up-bold vdt--drop-indicator"
-    ></div>
+    <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
+    <template v-if="reorderableColumns">
+      <div
+        ref="dropColIndicatorDown"
+        class="mdi mdi-arrow-down-bold vdt--drop-indicator"
+      ></div>
+      <div
+        ref="dropColIndicatorUp"
+        class="mdi mdi-arrow-up-bold vdt--drop-indicator"
+      ></div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { VColumn, VFilters, CellSeparators, VSorter } from './types';
-import { computed, reactive, ref, toRaw, toRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
@@ -89,6 +93,8 @@ interface VGridProps {
   filterGlobal?: boolean;
   filterHeader?: boolean;
   separators?: CellSeparators;
+  reorderableColumns: boolean;
+  resizableColumns: boolean;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -98,6 +104,8 @@ const props = withDefaults(defineProps<VGridProps>(), {
   separators: 'row',
   filterComponent: FilterComponent,
   filterComponentProps: {},
+  reorderableColumns: false,
+  resizableColumns: false,
 });
 
 const columns = ref(props.columns);

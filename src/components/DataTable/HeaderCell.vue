@@ -2,6 +2,7 @@
   <div class="vdt-th">
     <div class="vdt-th--content">
       <span
+        v-if="resizableColumns"
         class="vdt-column--resizer"
         @mousedown="(e) => $emit('onResizeStart', e)"
       ></span>
@@ -30,6 +31,7 @@ import { VColumn, VSorterData } from './types';
 const props = defineProps<{
   column: VColumn;
   sorter: VSorterData;
+  resizableColumns: boolean;
 }>();
 
 const sorterIcon = computed(() =>
