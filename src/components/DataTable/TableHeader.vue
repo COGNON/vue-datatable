@@ -61,7 +61,6 @@ defineEmits<{
 .vdt-thead {
   display: flex;
 }
-
 .vdt-th {
   padding: 5px;
 }

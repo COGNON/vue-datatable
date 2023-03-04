@@ -47,7 +47,6 @@ defineEmits<{
 <style lang="scss" scoped>
 .vdt-th {
   position: relative;
-  border-right: 1px solid rgba(255, 255, 255, 0.6);
 }
 .vdt-th-content {
   margin: 5px;

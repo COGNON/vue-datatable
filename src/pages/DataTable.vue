@@ -4,7 +4,7 @@
       :rows="rows"
       :columns="columns"
       filter-header
-      separators="row"
+      separators="cell"
       reorderable-columns
       resizable-columns
     >
