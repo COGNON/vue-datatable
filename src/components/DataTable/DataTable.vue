@@ -17,6 +17,10 @@
         :sorters="sorters"
         @update-sorter="updateSorters"
         @on-resize-start="onColResizeStart"
+        @on-drag-start="onColDragStart"
+        @on-drag-end="onColDragEnd"
+        @on-drag-over="onColDragOver"
+        @on-drop="onColDrop"
       >
         <template v-for="(_, name) in $slots" #[name]="slotData">
           <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
@@ -54,20 +58,30 @@
     </div>
 
     <div ref="resizerRef" class="vdt--resizer"></div>
+    <div
+      ref="dropColIndicatorDown"
+      class="mdi mdi-arrow-down-bold vdt--drop-indicator"
+    ></div>
+    <div
+      ref="dropColIndicatorUp"
+      class="mdi mdi-arrow-up-bold vdt--drop-indicator"
+    ></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { VColumn, VFilters, CellSeparators, VSorter } from './types';
-import { computed, reactive, ref, toRef, watch } from 'vue';
+import { computed, reactive, ref, toRaw, toRef, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
 import FilterComponent from './FilterComponent.vue';
 import { QInputProps } from 'quasar';
 
-const resizerRef = ref<HTMLElement | undefined>();
 const tableRef = ref<HTMLElement | undefined>();
+const resizerRef = ref<HTMLElement | undefined>();
+const dropColIndicatorDown = ref<HTMLElement | undefined>();
+const dropColIndicatorUp = ref<HTMLElement | undefined>();
 
 interface VGridProps {
   rows: any[];
@@ -86,7 +100,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   filterComponentProps: {},
 });
 
-const columns = reactive(props.columns);
+const columns = ref(props.columns);
 
 const processedRows = ref(props.rows);
 watch(
@@ -266,10 +280,10 @@ const onColResizeMove = (e: MouseEvent) => {
 
   diffX = e.clientX - x;
 
-  resizerRef.value.style.top = tableRef.value.offsetTop + 'px';
-  resizerRef.value.style.height = String(tableRef.value.clientHeight) + 'px';
-  resizerRef.value.style.left = String(e.pageX) + 'px';
-  resizerRef.value.style.display = 'block';
+  resizerRef.value.setAttribute(
+    'style',
+    `top: ${tableRef.value.offsetTop}px; height: ${tableRef.value.clientHeight}px; left: ${e.pageX}px; display:block;`
+  );
 };
 
 const onColResizeEnd = () => {
@@ -277,10 +291,10 @@ const onColResizeEnd = () => {
 
   resizingCol.value = false;
 
-  const colIdx = columns.findIndex((col) => col.field === curColResizing.field);
+  const colIdx = getColIdx(curColResizing.field);
 
   if (colIdx > -1) {
-    columns[colIdx].width = curColEl.offsetWidth + diffX;
+    columns.value[colIdx].width = curColEl.offsetWidth + diffX;
   }
 
   resizerRef.value.style.display = 'none';
@@ -288,6 +302,116 @@ const onColResizeEnd = () => {
   document.removeEventListener('mousemove', onColResizeMove);
   document.removeEventListener('mouseup', onColResizeEnd);
 };
+
+function onColDragStart(e: DragEvent) {
+  const sourceCol = e.target as HTMLElement;
+  sourceCol.style.opacity = '0.4';
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text', sourceCol.getAttribute('field') as string);
+  }
+}
+
+function onColDrop(e: DragEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const targetCol = getClosestColEl(e.target as HTMLElement);
+  if (!targetCol) return;
+
+  const data = e.dataTransfer?.getData('text');
+  const [srcField, placeOnRight] = data?.split('~~');
+
+  const destField = targetCol.getAttribute('field');
+
+  if (!(srcField && destField)) return;
+
+  if (srcField !== destField) {
+    const srcColIdx = getColIdx(srcField);
+    const sourceCol = columns.value.splice(srcColIdx, 1);
+    const destColIdx = getColIdx(destField);
+
+    const colCenter = targetCol.offsetLeft + targetCol.offsetWidth / 2;
+
+    if (colCenter < e.clientX) {
+      // move after
+      columns.value.splice(destColIdx + 1, 0, sourceCol[0]);
+    } else {
+      columns.value.splice(destColIdx, 0, sourceCol[0]);
+    }
+  }
+
+  return;
+}
+
+function onColDragEnd(e: DragEvent) {
+  (e.target as HTMLElement).style.opacity = '1';
+
+  if (!(dropColIndicatorDown.value && dropColIndicatorUp.value)) return;
+  dropColIndicatorDown.value.style.display = 'none';
+  dropColIndicatorUp.value.style.display = 'none';
+}
+
+function onColDragOver(e: DragEvent) {
+  // fires off the element being hovered over
+  e.preventDefault(); // allows dropping
+
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+
+  if (!(dropColIndicatorDown.value && dropColIndicatorUp.value)) return;
+
+  const targetCol = getClosestColEl(e.target as HTMLElement);
+  if (!targetCol) return;
+
+  const { top, left } = getOffset(targetCol);
+  const colWidth = targetCol.offsetWidth;
+  const colCenter = left + colWidth / 2;
+  const colHeight = targetCol.clientHeight;
+
+  const iconHeight = dropColIndicatorDown.value.clientHeight / 2;
+  const iconWidth = dropColIndicatorDown.value.clientWidth / 2;
+
+  const iconLeftLocation = left - iconWidth + 'px';
+  const iconRightLocation = left + colWidth - iconWidth + 'px';
+  const iconDownTop = top - iconHeight;
+  const iconUpTop = top + colHeight - iconHeight;
+
+  if (colCenter < e.clientX) {
+    // place indicators to right of targetCol
+    dropColIndicatorDown.value.setAttribute(
+      'style',
+      `top: ${iconDownTop}px;left:${iconRightLocation}`
+    );
+    dropColIndicatorUp.value.setAttribute(
+      'style',
+      `top: ${iconUpTop}px;left:${iconRightLocation}`
+    );
+  } else {
+    // place indicators to left of targetCol
+    dropColIndicatorDown.value.setAttribute(
+      'style',
+      `top: ${iconDownTop}px;left:${iconLeftLocation}`
+    );
+    dropColIndicatorUp.value.setAttribute(
+      'style',
+      `top: ${iconUpTop}px;left:${iconLeftLocation}`
+    );
+  }
+
+  dropColIndicatorDown.value.style.display = 'block';
+  dropColIndicatorUp.value.style.display = 'block';
+  return;
+}
+
+const getColIdx = (field: string): number =>
+  columns.value.findIndex((col) => col.field === field);
+
+const getClosestColEl = (target: HTMLElement): HTMLElement | null =>
+  target.closest('.vdt-th');
+
+function getOffset(target: HTMLElement): { top: number; left: number } {
+  return { top: target.offsetTop, left: target.offsetLeft };
+}
 </script>
 
 <style scoped>
@@ -319,5 +443,11 @@ const onColResizeEnd = () => {
 }
 .vdt-table {
   border: 1px solid rgba(255, 255, 255, 0.6);
+}
+.vdt--drop-indicator {
+  position: absolute;
+  display: none;
+  font-size: 2rem;
+  z-index: 100;
 }
 </style>

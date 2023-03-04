@@ -8,8 +8,14 @@
         :class="`vdt-th ${colSeparatorCls}`"
         :style="`width:${col.width}px;`"
         :sorter="sorters[col.field]"
+        :draggable="true"
+        :field="col.field"
         @update-sorter="(e) => $emit('updateSorter', e, col.field)"
         @on-resize-start="(e) => $emit('onResizeStart', e, col)"
+        @dragstart="(e:DragEvent) => $emit('onDragStart',e)"
+        @dragend="(e:DragEvent) => $emit('onDragEnd', e)"
+        @dragover="(e:DragEvent) => $emit('onDragOver', e)"
+        @drop="(e:DragEvent) => $emit('onDrop',e)"
       >
         <template v-if="$slots[`header-cell-${col.field}`]" #header-cell>
           <slot :name="`header-cell-${col.field}`"></slot>
@@ -42,6 +48,10 @@ defineProps<VHeaderProps>();
 defineEmits<{
   (e: 'updateSorter', event: MouseEvent, field: string): void;
   (e: 'onResizeStart', event: MouseEvent, col: VColumn): void;
+  (e: 'onDragStart', event: DragEvent): void;
+  (e: 'onDragEnd', event: DragEvent): void;
+  (e: 'onDragOver', event: DragEvent): void;
+  (e: 'onDrop', event: DragEvent): void;
 }>();
 </script>
 
