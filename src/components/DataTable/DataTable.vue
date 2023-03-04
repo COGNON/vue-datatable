@@ -15,6 +15,8 @@
         :row-separator-cls="rowSeparatorCls"
         :col-separator-cls="colSeparatorCls"
         :sorters="sorters"
+        :reorderable-columns="reorderableColumns"
+        :resizable-columns="resizableColumns"
         @update-sorter="updateSorters"
         @on-resize-start="onColResizeStart"
         @on-drag-start="onColDragStart"
@@ -29,7 +31,6 @@
         <template v-if="filterHeader" #filter="colProps">
           <q-input
             v-model="filters[colProps.col.field]"
-            :style="`width:${colProps.col.width}px;`"
             class="vdt-hdr-filter"
             v-bind="filterComponentProps"
           />
@@ -57,21 +58,23 @@
       </virtual-scroller>
     </div>
 
-    <div ref="resizerRef" class="vdt--resizer"></div>
-    <div
-      ref="dropColIndicatorDown"
-      class="mdi mdi-arrow-down-bold vdt--drop-indicator"
-    ></div>
-    <div
-      ref="dropColIndicatorUp"
-      class="mdi mdi-arrow-up-bold vdt--drop-indicator"
-    ></div>
+    <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
+    <template v-if="reorderableColumns">
+      <div
+        ref="dropColIndicatorDown"
+        class="mdi mdi-arrow-down-bold vdt--drop-indicator"
+      ></div>
+      <div
+        ref="dropColIndicatorUp"
+        class="mdi mdi-arrow-up-bold vdt--drop-indicator"
+      ></div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { VColumn, VFilters, CellSeparators, VSorter } from './types';
-import { computed, reactive, ref, toRaw, toRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
@@ -89,15 +92,19 @@ interface VGridProps {
   filterGlobal?: boolean;
   filterHeader?: boolean;
   separators?: CellSeparators;
+  reorderableColumns: boolean;
+  resizableColumns: boolean;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
   rows: () => [],
   filters: false,
   filterHeader: false,
-  separators: 'row',
+  separators: 'none',
   filterComponent: FilterComponent,
   filterComponentProps: {},
+  reorderableColumns: false,
+  resizableColumns: false,
 });
 
 const columns = ref(props.columns);
@@ -111,11 +118,11 @@ watch(
 const rowHeight = 48;
 
 const rowSeparatorCls = computed<string>(() =>
-  props.separators.match(/row|cell/) ? 'vdt-separators-row' : ''
+  props.separators.match(/row|cell/) ? 'vdt-row--separators' : ''
 );
 
 const colSeparatorCls = computed<string>(() =>
-  props.separators.match(/column|cell/) ? 'vdt-separators-col' : ''
+  props.separators.match(/column|cell/) ? 'vdt-col--separators' : ''
 );
 
 const filters = ref<VFilters>({});
@@ -414,12 +421,12 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 }
 </script>
 
-<style scoped>
-.vdt-separators-row {
-  border-bottom: 1px solid white;
+<style>
+.vdt-row--separators {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
 }
-.vdt-separators-col {
-  border-left: 1px solid white;
+.vdt-col--separators {
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
 }
 .vdt-global-filter-input {
   margin-left: 5px;

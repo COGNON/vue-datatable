@@ -1,6 +1,13 @@
 <template>
   <div class="q-pa-md">
-    <DataTable :rows="rows" :columns="columns" filter-header separators="row">
+    <DataTable
+      :rows="rows"
+      :columns="columns"
+      filter-header
+      separators="cell"
+      reorderable-columns
+      resizable-columns
+    >
     </DataTable>
   </div>
 </template>

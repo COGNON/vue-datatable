@@ -8,7 +8,7 @@
         :class="`vdt-th ${colSeparatorCls}`"
         :style="`width:${col.width}px;`"
         :sorter="sorters[col.field]"
-        :draggable="true"
+        :resizable-columns="resizableColumns"
         :field="col.field"
         @update-sorter="(e) => $emit('updateSorter', e, col.field)"
         @on-resize-start="(e) => $emit('onResizeStart', e, col)"
@@ -41,6 +41,8 @@ interface VHeaderProps {
   rowSeparatorCls: string;
   colSeparatorCls: string;
   sorters: VSorter;
+  reorderableColumns: boolean;
+  resizableColumns: boolean;
 }
 
 defineProps<VHeaderProps>();
@@ -59,7 +61,6 @@ defineEmits<{
 .vdt-thead {
   display: flex;
 }
-
 .vdt-th {
   padding: 5px;
 }

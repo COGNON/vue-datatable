@@ -34,7 +34,6 @@ const expandIcon = computed(() => (expanded.value ? 'mdi-minus' : 'mdi-plus'));
 <style lang="scss" scoped>
 .vdt-row {
   display: flex;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
 }
 .vdt-row--expanded {
   padding-left: 60px;
