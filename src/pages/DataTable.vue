@@ -7,6 +7,7 @@
       separators="cell"
       reorderable-columns
       resizable-columns
+      hightlight-on-hover
     >
     </DataTable>
   </div>

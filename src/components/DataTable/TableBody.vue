@@ -6,6 +6,7 @@
     :row-height="rowHeight"
     :row-separator-cls="rowSeparatorCls"
     :col-separator-cls="colSeparatorCls"
+    :hightlight-on-hover="hightlightOnHover"
   >
     <template #cells>
       <div
@@ -44,6 +45,7 @@ interface VScrollerProps {
   rowHeight: number;
   rowSeparatorCls: string;
   colSeparatorCls: string;
+  hightlightOnHover: boolean;
 }
 
 withDefaults(defineProps<VScrollerProps>(), {
