@@ -9,6 +9,22 @@
       />
     </div>
 
+    <div v-if="title" class="vdt-top">
+      <template v-if="$slots['top-left'] || $slots['top-right']">
+        <span>
+          <slot v-if="$slots['top-left']" name="top-left"></slot>
+        </span>
+        <span class="vdt-top--right">
+          <slot v-if="$slots['top-right']" name="top-right"></slot>
+        </span>
+      </template>
+      <template v-else>
+        <slot name="top">
+          <span v-if="title" class="vdt-top--title">{{ title }}</span>
+        </slot>
+      </template>
+    </div>
+
     <div ref="tableRef" class="vdt-table" role="table">
       <table-header
         :columns="columns"
@@ -60,6 +76,10 @@
       </virtual-scroller>
     </div>
 
+    <div class="vdt-bottom">
+      <slot v-if="$slots.bottom" name="bottom"></slot>
+    </div>
+
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
     <template v-if="reorderableColumns">
       <div
@@ -81,6 +101,7 @@ import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
 import FilterComponent from './FilterComponent.vue';
+import TableTop from './TableTop.vue';
 import { QInputProps } from 'quasar';
 
 const tableRef = ref<HTMLElement | undefined>();
@@ -101,6 +122,7 @@ interface VGridProps {
   defaultFilters?: VFilter;
   defaultSorters?: VSorter;
   defaultColProps?: Partial<VColumn>;
+  title?: string;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -114,6 +136,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   resizableColumns: false,
   hightlightOnHover: false,
   stripedRows: false,
+  title: '',
   defaultFilters: () => {
     return {};
   },
@@ -452,15 +475,8 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 .vdt-col--separators {
   border-right: 1px solid rgba(255, 255, 255, 0.6);
 }
-.vdt-global-filter-input {
-  margin-left: 5px;
-  margin-right: 5px;
-}
 .clickable {
   cursor: pointer;
-}
-.vdt-hdr-filter {
-  padding: 5px;
 }
 .vdt--resizer {
   width: 1px;
@@ -472,6 +488,9 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 .vdt-table .vdt-thead > .vdt-th:last-child .vdt-column--resizer {
   display: none;
 }
+</style>
+
+<style lang="scss" scoped>
 .vdt-table {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
@@ -480,5 +499,22 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   display: none;
   font-size: 2rem;
   z-index: 100;
+}
+.vdt-top {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 10px 10px 5px 10px;
+}
+.vdt-top--title {
+  font-size: 1.5em;
+}
+.vdt-top .vdt-top--right {
+  float: right;
+}
+.vdt-hdr-filter {
+  padding: 5px;
+}
+.vdt-global-filter-input {
+  margin-left: 5px;
+  margin-right: 5px;
 }
 </style>
