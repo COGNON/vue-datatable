@@ -1,11 +1,13 @@
 <template>
   <table-row
-    v-for="item in rows"
+    v-for="(item, idx) in rows"
     :key="item.id"
     :row="item"
     :row-height="rowHeight"
     :row-separator-cls="rowSeparatorCls"
     :col-separator-cls="colSeparatorCls"
+    :hightlight-on-hover="hightlightOnHover"
+    :striped-rows="idx % 2 ? stripedRows : false"
   >
     <template #cells>
       <div
@@ -44,6 +46,8 @@ interface VScrollerProps {
   rowHeight: number;
   rowSeparatorCls: string;
   colSeparatorCls: string;
+  hightlightOnHover: boolean;
+  stripedRows: boolean;
 }
 
 withDefaults(defineProps<VScrollerProps>(), {

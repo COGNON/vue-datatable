@@ -1,6 +1,9 @@
 <template>
   <div class="vdt-row--outer">
-    <div :style="`height:${rowHeight}px`" :class="`vdt-row ${rowSeparatorCls}`">
+    <div
+      :style="`height:${rowHeight}px`"
+      :class="`vdt-row ${rowSeparatorCls} ${highlightClass} ${stripedClass}`"
+    >
       <div
         v-if="$slots['expanded']"
         :style="`width:60px;height:${rowHeight}px`"
@@ -20,22 +23,38 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
-defineProps<{
+const props = defineProps<{
   row: any;
   rowHeight: number;
   rowSeparatorCls: string;
   colSeparatorCls: string;
+  hightlightOnHover: boolean;
+  stripedRows: boolean;
 }>();
 
 const expanded = ref(false);
 const expandIcon = computed(() => (expanded.value ? 'mdi-minus' : 'mdi-plus'));
+
+const highlightClass = computed(() =>
+  props.hightlightOnHover ? 'vdt-row--on-hover' : ''
+);
+
+const stripedClass = computed(() =>
+  props.stripedRows ? 'vdt-row--striped' : ''
+);
 </script>
 
 <style lang="scss" scoped>
 .vdt-row {
   display: flex;
 }
+.vdt-row.vdt-row--striped {
+  background-color: rgba(255, 255, 255, 0.05);
+}
 .vdt-row--expanded {
   padding-left: 60px;
+}
+.vdt-row.vdt-row--on-hover:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 </style>
