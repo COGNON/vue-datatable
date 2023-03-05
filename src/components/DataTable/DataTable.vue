@@ -50,6 +50,7 @@
             :row-separator-cls="rowSeparatorCls"
             :col-separator-cls="colSeparatorCls"
             :hightlight-on-hover="hightlightOnHover"
+            :striped-rows="stripedRows"
           >
             <template v-for="(_, name) in $slots" #[name]="slotData">
               <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
@@ -96,6 +97,7 @@ interface VGridProps {
   reorderableColumns: boolean;
   resizableColumns: boolean;
   hightlightOnHover?: boolean;
+  stripedRows?: boolean;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -108,6 +110,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   reorderableColumns: false,
   resizableColumns: false,
   hightlightOnHover: false,
+  stripedRows: false,
 });
 
 const columns = ref(props.columns);
