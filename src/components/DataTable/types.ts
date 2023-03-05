@@ -3,6 +3,8 @@ export interface VColumn {
   header: string;
   width?: number;
   resizable?: boolean;
+  sortable?: boolean;
+  filterable?: boolean;
 }
 
 export interface VGridProps {
@@ -10,7 +12,7 @@ export interface VGridProps {
   columns: VColumn[];
 }
 
-export type VFilters = {
+export type VFilter = {
   [key: string]: string;
 };
 

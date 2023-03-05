@@ -7,8 +7,8 @@
         @mousedown="(e) => $emit('onResizeStart', e)"
       ></span>
       <span
-        class="vdt-th-content clickable"
-        @click="(e) => $emit('updateSorter', e)"
+        :class="`vdt-th-content ${column.sortable ? 'clickable' : ''}`"
+        @click="(e) => (column.sortable ? $emit('updateSorter', e) : null)"
       >
         <slot name="header-cell">
           {{ column.header }}
@@ -18,7 +18,7 @@
       <span v-if="sorter" :class="`mdi mdi-sort-${sorterIcon}`"></span>
     </div>
 
-    <div class="vdt-th--filter">
+    <div v-if="column.filterable" class="vdt-th--filter">
       <slot name="filter"></slot>
     </div>
   </div>

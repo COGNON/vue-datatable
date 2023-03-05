@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { VColumn, VFilters, CellSeparators, VSorter } from './types';
+import { VColumn, VFilter, CellSeparators, VSorter } from './types';
 import { computed, ref, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
@@ -98,6 +98,9 @@ interface VGridProps {
   resizableColumns: boolean;
   hightlightOnHover?: boolean;
   stripedRows?: boolean;
+  defaultFilters?: VFilter;
+  defaultSorters?: VSorter;
+  defaultColProps?: Partial<VColumn>;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -111,9 +114,24 @@ const props = withDefaults(defineProps<VGridProps>(), {
   resizableColumns: false,
   hightlightOnHover: false,
   stripedRows: false,
+  defaultFilters: () => {
+    return {};
+  },
+  defaultSorters: () => {
+    return {};
+  },
+  defaultColProps: () => {
+    return {
+      sortable: true,
+      filterable: true,
+    };
+  },
 });
 
-const columns = ref(props.columns);
+const columns = computed(() => getFinalColumns(props.columns));
+function getFinalColumns(columns: VColumn[]): VColumn[] {
+  return columns.map((col) => Object.assign({}, props.defaultColProps, col));
+}
 
 const processedRows = ref(props.rows);
 watch(
@@ -131,7 +149,7 @@ const colSeparatorCls = computed<string>(() =>
   props.separators.match(/column|cell/) ? 'vdt-col--separators' : ''
 );
 
-const filters = ref<VFilters>({});
+const filters = ref<VFilter>(props.defaultFilters);
 
 const filterComponentProps: Partial<QInputProps> = {
   dense: true,
@@ -139,7 +157,7 @@ const filterComponentProps: Partial<QInputProps> = {
   label: 'Search',
 };
 
-function filterRows(filters: VFilters | string, rows: any[]): any[] {
+function filterRows(filters: VFilter | string, rows: any[]): any[] {
   if (typeof filters === 'string' && filters) {
     // global filter
     return rows.filter((row) => {
@@ -178,7 +196,7 @@ watch(globalFilter, (newFilter) => {
   processedRows.value = filterRows(newFilter, props.rows);
 });
 
-const sorters = ref<VSorter>({});
+const sorters = ref<VSorter>(props.defaultSorters);
 watch(sorters, () => (processedRows.value = sortRows(processedRows.value)), {
   deep: true,
 });
