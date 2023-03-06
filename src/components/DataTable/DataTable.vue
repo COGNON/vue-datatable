@@ -1,5 +1,9 @@
 <template>
-  <div>
+  <div class="vdt-container">
+    <div v-if="loading" class="vdt-loading">
+      <slot name="loading">{{ loadingText }}</slot>
+    </div>
+
     <div v-if="filterGlobal" class="vdt-global-filter">
       <q-input
         v-model="globalFilter"
@@ -134,6 +138,8 @@ interface VGridProps {
   lineHeight?: number;
   selection?: SelectionModes;
   wrapCells?: CellWrap;
+  loading?: boolean;
+  loadingText?: string;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -151,6 +157,8 @@ const props = withDefaults(defineProps<VGridProps>(), {
   lineHeight: 48,
   selection: 'none',
   wrapCells: 'none',
+  loading: false,
+  loadingText: 'Loading...',
   defaultFilters: () => {
     return {};
   },
@@ -536,6 +544,9 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 </style>
 
 <style lang="scss" scoped>
+.vdt-container {
+  position: relative;
+}
 .vdt-table {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
@@ -562,5 +573,15 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 .vdt-global-filter-input {
   margin-left: 5px;
   margin-right: 5px;
+}
+.vdt-loading {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
 }
 </style>

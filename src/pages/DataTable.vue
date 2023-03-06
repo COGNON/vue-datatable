@@ -10,7 +10,9 @@
       hightlight-on-hover
       striped-rows
       wrap-cells="wrap"
+      :loading="loading"
     >
+      <template #loading>Test</template>
     </DataTable>
   </div>
 </template>
@@ -19,6 +21,8 @@
 import { ref, onMounted } from 'vue';
 import DataTable from 'src/components/DataTable/DataTable.vue';
 import { VColumn } from 'src/components/DataTable/types';
+
+const loading = ref(false);
 
 const rows = ref([]);
 const columns: VColumn[] = [
@@ -58,7 +62,10 @@ const columns: VColumn[] = [
 onMounted(async () => {
   if (rows.value.length) return;
 
+  loading.value = true;
+
   const response = await fetch('https://wizard-world-api.herokuapp.com/Spells');
   rows.value = await response.json();
+  loading.value = false;
 });
 </script>
