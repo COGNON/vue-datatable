@@ -1,12 +1,6 @@
 <template>
   <div :class="`vdt-thead ${rowSeparatorCls}`">
     <div
-      v-if="$slots['expanded']"
-      :class="`vdt-th ${colSeparatorCls}`"
-      style="width: 60px"
-    ></div>
-
-    <div
       v-if="selection !== 'none'"
       :class="`vdt-th vdt-th--selection ${colSeparatorCls}`"
       style="width: 60px"
@@ -19,6 +13,12 @@
         />
       </slot>
     </div>
+
+    <div
+      v-if="$slots['expanded']"
+      :class="`vdt-th ${colSeparatorCls}`"
+      style="width: 60px"
+    ></div>
 
     <template v-for="col in columns" :key="col.field">
       <header-cell

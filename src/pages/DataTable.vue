@@ -9,6 +9,7 @@
       resizable-columns
       hightlight-on-hover
       striped-rows
+      selection="multiple"
     >
     </DataTable>
   </div>
