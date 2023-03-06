@@ -2,7 +2,7 @@
   <div class="vdt-row--outer">
     <div
       :style="`height:${lineHeight}px`"
-      :class="`vdt-row ${rowSeparatorCls} ${highlightClass} ${stripedClass}`"
+      :class="`vdt-row ${rowSeparatorCls} ${highlightClass} ${stripedClass} ${selectedCls}`"
     >
       <div
         v-if="selection !== 'none'"
@@ -74,23 +74,28 @@ const highlightClass = computed(() =>
 const stripedClass = computed(() =>
   props.stripedRows ? 'vdt-row--striped' : ''
 );
+
+const selectedCls = computed(() => (props.selected ? 'vdt-row--selected' : ''));
 </script>
 
 <style lang="scss" scoped>
 .vdt-row {
   display: flex;
 }
-.vdt-row.vdt-row--striped {
+.vdt-row--striped {
   background-color: rgba(255, 255, 255, 0.05);
 }
 .vdt-row--expanded {
   padding-left: 60px;
 }
 .vdt-row.vdt-row--on-hover:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.4);
 }
 .vdt-td--selection {
   text-align: center;
   vertical-align: middle;
+}
+.vdt-row--selected {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 </style>
