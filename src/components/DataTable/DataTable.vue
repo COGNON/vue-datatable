@@ -23,12 +23,16 @@
         :sorters="sorters"
         :reorderable-columns="reorderableColumns"
         :resizable-columns="resizableColumns"
+        :selection="selection"
+        :selected-rows="selectedRows"
+        :row-number="processedRows.length"
         @update-sorter="updateSorters"
         @on-resize-start="onColResizeStart"
         @on-drag-start="onColDragStart"
         @on-drag-end="onColDragEnd"
         @on-drag-over="onColDragOver"
         @on-drop="onColDrop"
+        @on-select-all="onSelectAll"
       >
         <template v-for="(_, name) in $slots" #[name]="slotData">
           <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
@@ -57,6 +61,10 @@
             :col-separator-cls="colSeparatorCls"
             :hightlight-on-hover="hightlightOnHover"
             :striped-rows="stripedRows"
+            :selection="selection"
+            :all-selected="allSelected"
+            :selected-rows="selectedRows"
+            @on-row-select="onRowSelect"
           >
             <template v-for="(_, name) in $slots" #[name]="slotData">
               <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
@@ -66,8 +74,10 @@
       </virtual-scroller>
     </div>
 
-    <div v-if="$slots.bottom" class="vdt-bottom">
-      <slot name="bottom"></slot>
+    <div v-if="$slots.bottom || selectedRowsCount" class="vdt-bottom">
+      <slot name="bottom">
+        <div v-if="selectedRowsCount">{{ selectedRowsCount }} selected</div>
+      </slot>
     </div>
 
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
@@ -85,8 +95,15 @@
 </template>
 
 <script setup lang="ts">
-import { VColumn, VFilter, CellSeparators, VSorter } from './types';
-import { computed, ref, watch } from 'vue';
+import {
+  VColumn,
+  VFilter,
+  CellSeparators,
+  VSorter,
+  SelectionModes,
+  SelectedRow,
+} from './types';
+import { computed, ref, toRef, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
@@ -113,6 +130,7 @@ interface VGridProps {
   defaultColProps?: Partial<VColumn>;
   title?: string;
   lineHeight?: number;
+  selection?: SelectionModes;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -128,6 +146,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   stripedRows: false,
   title: '',
   lineHeight: 48,
+  selection: 'none',
   defaultFilters: () => {
     return {};
   },
@@ -151,10 +170,37 @@ function getFinalColumns(columns: VColumn[]): VColumn[] {
   return columns.map((col) => Object.assign({}, props.defaultColProps, col));
 }
 
-const processedRows = ref(props.rows);
-watch(
-  () => props.rows,
-  (newRows) => (processedRows.value = newRows)
+const processedRows = toRef(props, 'rows');
+
+const allSelected = ref(false);
+const selectedRows = ref<SelectedRow>({});
+function onSelectAll(val: boolean) {
+  allSelected.value = val;
+
+  // actually (de)select all
+  for (let i = 0; i < processedRows.value.length; i++) {
+    if (val) selectedRows.value[i] = val;
+    else delete selectedRows.value[i];
+  }
+}
+
+function onRowSelect(rowIdx: number, selected: boolean) {
+  if (selected) selectedRows.value[rowIdx] = selected;
+  else delete selectedRows.value[rowIdx];
+
+  if (props.selection === 'single') {
+    // deselect all others
+    const rowsSelected = Object.keys(selectedRows.value);
+    if (rowsSelected.length > 1) {
+      rowsSelected.forEach((idx: number) => {
+        if (idx != rowIdx) delete selectedRows.value[idx];
+      });
+    }
+  }
+}
+
+const selectedRowsCount = computed(
+  () => Object.keys(selectedRows.value).length
 );
 
 const rowSeparatorCls = computed<string>(() =>

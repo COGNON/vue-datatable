@@ -8,36 +8,19 @@
     :col-separator-cls="colSeparatorCls"
     :hightlight-on-hover="hightlightOnHover"
     :striped-rows="idx % 2 ? stripedRows : false"
+    :selection="selection"
+    :selected="selectedRows[idx] || allSelected || false"
+    :columns="columns"
+    @on-select="(val) => $emit('onRowSelect', idx, val)"
   >
-    <template #cells>
-      <div
-        v-for="col in columns"
-        :key="col.field"
-        :style="`width:${col.width}px;height:${lineHeight}px`"
-        :class="`vdt-cell ${colSeparatorCls}`"
-      >
-        <div class="vdt-cell-content">
-          <template v-if="$slots[`body-cell-${col.field}`]">
-            <slot :name="`body-cell-${col.field}`"></slot>
-          </template>
-          <template v-else-if="$slots['body-cell']">
-            <slot name="body-cell"></slot>
-          </template>
-          <template v-else>
-            {{ item[col.field] }}
-          </template>
-        </div>
-      </div>
-    </template>
-
-    <template v-if="$slots['expanded']" #expanded="rowProps">
-      <slot name="expanded" v-bind="rowProps"></slot>
+    <template v-for="(_, name) in $slots" #[name]="slotData">
+      <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
     </template>
   </table-row>
 </template>
 
 <script setup lang="ts">
-import { VColumn } from './types';
+import { SelectedRow, SelectionModes, VColumn } from './types';
 import TableRow from './TableRow.vue';
 
 interface VScrollerProps {
@@ -48,22 +31,18 @@ interface VScrollerProps {
   colSeparatorCls: string;
   hightlightOnHover: boolean;
   stripedRows: boolean;
+  selection: SelectionModes;
+  allSelected: boolean;
+  selectedRows: SelectedRow;
 }
 
 withDefaults(defineProps<VScrollerProps>(), {
   rows: () => [],
-  lineHeight: 48,
 });
+
+defineEmits<{
+  (e: 'onRowSelect', rowIdx: number, val: boolean): void;
+}>();
 </script>
 
-<style lang="scss" scoped>
-.vdt-cell,
-.vdt-cell-content {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vdt-cell {
-  padding: 5px;
-}
-</style>
+<style lang="scss" scoped></style>
