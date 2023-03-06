@@ -15,12 +15,12 @@ import { VColumn } from './types';
 interface VScrollerProps {
   rows: any[];
   columns: VColumn[];
-  rowHeight: number;
+  lineHeight: number;
 }
 
 const props = withDefaults(defineProps<VScrollerProps>(), {
   rows: () => [],
-  rowHeight: 48,
+  lineHeight: 48,
 });
 
 const root = ref(null);
@@ -30,14 +30,14 @@ const spacer = ref(null);
 const nodePadding = 20;
 const rootHeight = 500;
 const rowCount = computed(() => props.rows.length);
-const viewportHeight = computed(() => rowCount.value * props.rowHeight);
+const viewportHeight = computed(() => rowCount.value * props.lineHeight);
 
 const scrollTop = ref(0);
 const startNode = computed(() => getStartNode(scrollTop.value));
 const visibleNodesCount = computed(() =>
   getVisibleNodesCount(startNode.value, rowCount.value)
 );
-const offsetY = computed(() => startNode.value * props.rowHeight);
+const offsetY = computed(() => startNode.value * props.lineHeight);
 
 function getVisibleNodes(
   startNode: number,
@@ -47,13 +47,13 @@ function getVisibleNodes(
 }
 
 function getStartNode(scrollTop: number): number {
-  let tmpStart = Math.floor(scrollTop / props.rowHeight) - nodePadding;
+  let tmpStart = Math.floor(scrollTop / props.lineHeight) - nodePadding;
   return Math.max(0, tmpStart);
 }
 
 function getVisibleNodesCount(startNode: number, rowCount: number): number {
   const count =
-    Math.ceil(viewportHeight.value / props.rowHeight) + 2 * nodePadding;
+    Math.ceil(viewportHeight.value / props.lineHeight) + 2 * nodePadding;
   return Math.min(rowCount - startNode, count);
 }
 

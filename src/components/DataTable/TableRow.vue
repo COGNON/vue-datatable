@@ -1,12 +1,12 @@
 <template>
   <div class="vdt-row--outer">
     <div
-      :style="`height:${rowHeight}px`"
+      :style="`height:${lineHeight}px`"
       :class="`vdt-row ${rowSeparatorCls} ${highlightClass} ${stripedClass}`"
     >
       <div
         v-if="$slots['expanded']"
-        :style="`width:60px;height:${rowHeight}px`"
+        :style="`width:60px;height:${lineHeight}px`"
         :class="`vdt-cell ${colSeparatorCls}`"
       >
         <q-btn :icon="expandIcon" round @click="expanded = !expanded" />
@@ -25,7 +25,7 @@ import { ref, computed } from 'vue';
 
 const props = defineProps<{
   row: any;
-  rowHeight: number;
+  lineHeight: number;
   rowSeparatorCls: string;
   colSeparatorCls: string;
   hightlightOnHover: boolean;

@@ -3,7 +3,7 @@
     v-for="(item, idx) in rows"
     :key="item.id"
     :row="item"
-    :row-height="rowHeight"
+    :line-height="lineHeight"
     :row-separator-cls="rowSeparatorCls"
     :col-separator-cls="colSeparatorCls"
     :hightlight-on-hover="hightlightOnHover"
@@ -13,7 +13,7 @@
       <div
         v-for="col in columns"
         :key="col.field"
-        :style="`width:${col.width}px;height:${rowHeight}px`"
+        :style="`width:${col.width}px;height:${lineHeight}px`"
         :class="`vdt-cell ${colSeparatorCls}`"
       >
         <div class="vdt-cell-content">
@@ -43,7 +43,7 @@ import TableRow from './TableRow.vue';
 interface VScrollerProps {
   rows: any[];
   columns: VColumn[];
-  rowHeight: number;
+  lineHeight: number;
   rowSeparatorCls: string;
   colSeparatorCls: string;
   hightlightOnHover: boolean;
@@ -52,7 +52,7 @@ interface VScrollerProps {
 
 withDefaults(defineProps<VScrollerProps>(), {
   rows: () => [],
-  rowHeight: 48,
+  lineHeight: 48,
 });
 </script>
 

@@ -46,12 +46,12 @@
       <virtual-scroller
         :rows="processedRows"
         :columns="columns"
-        :row-height="rowHeight"
+        :line-height="lineHeight"
       >
         <template #content="scrollerProps">
           <table-body
             :rows="scrollerProps.visibleRows"
-            :row-height="rowHeight"
+            :line-height="lineHeight"
             :columns="columns"
             :row-separator-cls="rowSeparatorCls"
             :col-separator-cls="colSeparatorCls"
@@ -112,6 +112,7 @@ interface VGridProps {
   defaultSorters?: VSorter;
   defaultColProps?: Partial<VColumn>;
   title?: string;
+  lineHeight?: number;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -126,6 +127,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   hightlightOnHover: false,
   stripedRows: false,
   title: '',
+  lineHeight: 48,
   defaultFilters: () => {
     return {};
   },
@@ -154,8 +156,6 @@ watch(
   () => props.rows,
   (newRows) => (processedRows.value = newRows)
 );
-
-const rowHeight = 48;
 
 const rowSeparatorCls = computed<string>(() =>
   props.separators.match(/row|cell/) ? 'vdt-row--separators' : ''
