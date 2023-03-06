@@ -2,8 +2,7 @@
   <div :class="`vdt-thead ${rowSeparatorCls}`">
     <div
       v-if="selection !== 'none'"
-      :class="`vdt-th vdt-th--selection ${colSeparatorCls}`"
-      style="width: 60px"
+      :class="`vdt-th vdt-th--selection vdt-cell--extra ${colSeparatorCls}`"
     >
       <slot name="header-cell-selection">
         <q-checkbox
@@ -16,9 +15,8 @@
 
     <div
       v-if="$slots['expanded']"
-      :class="`vdt-th ${colSeparatorCls}`"
-      style="width: 60px"
-    ></div>
+      :class="`vdt-th vdt-td--expand ${colSeparatorCls}`"
+    />
 
     <template v-for="col in columns" :key="col.field">
       <header-cell
@@ -36,14 +34,14 @@
         @drop="(e:DragEvent) => $emit('onDrop',e)"
       >
         <template v-if="$slots[`header-cell-${col.field}`]" #header-cell>
-          <slot :name="`header-cell-${col.field}`"></slot>
+          <slot :name="`header-cell-${col.field}`" />
         </template>
         <template v-else-if="$slots['header-cell']" #header-cell>
-          <slot name="header-cell"></slot>
+          <slot name="header-cell" />
         </template>
 
         <template #filter>
-          <slot name="filter" :col="col"></slot>
+          <slot name="filter" :col="col" />
         </template>
       </header-cell>
     </template>

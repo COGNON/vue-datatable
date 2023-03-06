@@ -14,7 +14,7 @@
     @on-select="(val) => $emit('onRowSelect', idx, val)"
   >
     <template v-for="(_, name) in $slots" #[name]="slotData">
-      <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
+      <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
     </template>
   </table-row>
 </template>

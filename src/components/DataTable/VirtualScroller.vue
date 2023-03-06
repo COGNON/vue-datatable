@@ -2,7 +2,7 @@
   <div ref="root" class="vdt-tbody" :style="rootStyle" @scroll="onScroll">
     <div ref="viewport" class="vdt-viewscroller" :style="viewportStyle">
       <div ref="spacer" class="vdt-spacer" :style="spacerStyle">
-        <slot name="content" :visible-rows="visibleRows"></slot>
+        <slot name="content" :visible-rows="visibleRows" />
       </div>
     </div>
   </div>

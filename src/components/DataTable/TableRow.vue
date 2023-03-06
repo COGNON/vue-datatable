@@ -6,8 +6,7 @@
     >
       <div
         v-if="selection !== 'none'"
-        :class="`vdt-cell vdt-cell--selection ${colSeparatorCls}`"
-        :style="`width:60px;height:${lineHeight}px`"
+        :class="`vdt-td vdt-td--selection ${colSeparatorCls}`"
       >
         <slot name="body-cell-selection">
           <q-checkbox
@@ -19,8 +18,7 @@
 
       <div
         v-if="$slots['expanded']"
-        :style="`width:60px;height:${lineHeight}px`"
-        :class="`vdt-cell ${colSeparatorCls}`"
+        :class="`vdt-td vdt-td--expand ${colSeparatorCls}`"
       >
         <q-btn :icon="expandIcon" round @click="expanded = !expanded" />
       </div>
@@ -34,19 +32,19 @@
         :row="row"
       >
         <template v-for="(_, name) in $slots" #[name]="slotData">
-          <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
+          <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
         </template>
       </body-cell>
     </div>
 
     <div v-if="expanded && $slots['expanded']" class="vdt-row--expanded">
-      <slot name="expanded" :row="row"></slot>
+      <slot name="expanded" :row="row" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { SelectionModes, VColumn } from './types';
 import BodyCell from './BodyCell.vue';
 
@@ -91,7 +89,7 @@ const stripedClass = computed(() =>
 .vdt-row.vdt-row--on-hover:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
-.vdt-cell--selection {
+.vdt-td--selection {
   text-align: center;
   vertical-align: middle;
 }

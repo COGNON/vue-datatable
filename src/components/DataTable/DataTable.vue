@@ -35,7 +35,7 @@
         @on-select-all="onSelectAll"
       >
         <template v-for="(_, name) in $slots" #[name]="slotData">
-          <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
+          <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
         </template>
 
         <template v-if="filterHeader" #filter="colProps">
@@ -67,7 +67,7 @@
             @on-row-select="onRowSelect"
           >
             <template v-for="(_, name) in $slots" #[name]="slotData">
-              <slot v-if="$slots[name]" :name="name" v-bind="slotData"></slot>
+              <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
             </template>
           </table-body>
         </template>
@@ -85,11 +85,11 @@
       <div
         ref="dropColIndicatorDown"
         class="mdi mdi-arrow-down-bold vdt--drop-indicator"
-      ></div>
+      />
       <div
         ref="dropColIndicatorUp"
         class="mdi mdi-arrow-up-bold vdt--drop-indicator"
-      ></div>
+      />
     </template>
   </div>
 </template>
@@ -523,6 +523,11 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   z-index: 10;
   display: none;
   border: 1px solid var(--q-accent);
+}
+.vdt-th--expand,
+.vdt-th--selection,
+.vdt-td--selection {
+  width: 60px;
 }
 </style>
 

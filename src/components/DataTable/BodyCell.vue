@@ -1,10 +1,10 @@
 <template>
   <div class="vdt-cell-content">
     <template v-if="$slots[`body-cell-${column.field}`]">
-      <slot :name="`body-cell-${column.field}`"></slot>
+      <slot :name="`body-cell-${column.field}`" />
     </template>
     <template v-else-if="$slots['body-cell']">
-      <slot name="body-cell"></slot>
+      <slot name="body-cell" />
     </template>
     <template v-else>
       {{ row[column.field] }}
