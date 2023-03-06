@@ -5,7 +5,7 @@
         v-if="resizableColumns"
         class="vdt-column--resizer"
         @mousedown="(e) => $emit('onResizeStart', e)"
-      ></span>
+      />
       <span
         :class="`vdt-th-content ${column.sortable ? 'clickable' : ''}`"
         @click="(e) => (column.sortable ? $emit('updateSorter', e) : null)"
@@ -15,11 +15,11 @@
         </slot>
       </span>
 
-      <span v-if="sorter" :class="`mdi mdi-sort-${sorterIcon}`"></span>
+      <span v-if="sorter" :class="`mdi mdi-sort-${sorterIcon}`" />
     </div>
 
     <div v-if="column.filterable" class="vdt-th--filter">
-      <slot name="filter"></slot>
+      <slot name="filter" />
     </div>
   </div>
 </template>
