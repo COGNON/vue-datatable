@@ -1,7 +1,7 @@
 <template>
   <div class="vdt-row--outer">
     <div
-      :style="`height:${lineHeight}px`"
+      :style="`height:${lineHeight}px;${wrapStyle}`"
       :class="`vdt-row ${rowSeparatorCls} ${highlightClass} ${stripedClass} ${selectedCls}`"
     >
       <div
@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { SelectionModes, VColumn } from './types';
+import { CellWrap, SelectionModes, VColumn } from './types';
 import BodyCell from './BodyCell.vue';
 
 const props = defineProps<{
@@ -58,6 +58,7 @@ const props = defineProps<{
   selection: SelectionModes;
   columns: VColumn[];
   selected: boolean;
+  wrapCells: CellWrap;
 }>();
 
 defineEmits<{
@@ -76,6 +77,10 @@ const stripedClass = computed(() =>
 );
 
 const selectedCls = computed(() => (props.selected ? 'vdt-row--selected' : ''));
+
+const wrapStyle = computed(() =>
+  props.wrapCells === 'none' ? 'white-space:nowrap;' : ''
+);
 </script>
 
 <style lang="scss" scoped>

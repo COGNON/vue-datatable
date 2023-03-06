@@ -64,6 +64,7 @@
             :selection="selection"
             :all-selected="allSelected"
             :selected-rows="selectedRows"
+            :wrap-cells="wrapCells"
             @on-row-select="onRowSelect"
           >
             <template v-for="(_, name) in $slots" #[name]="slotData">
@@ -102,6 +103,7 @@ import {
   VSorter,
   SelectionModes,
   SelectedRow,
+  CellWrap,
 } from './types';
 import { computed, ref, toRef, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
@@ -131,6 +133,7 @@ interface VGridProps {
   title?: string;
   lineHeight?: number;
   selection?: SelectionModes;
+  wrapCells?: CellWrap;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -147,6 +150,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   title: '',
   lineHeight: 48,
   selection: 'none',
+  wrapCells: 'none',
   defaultFilters: () => {
     return {};
   },

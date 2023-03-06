@@ -11,6 +11,7 @@
     :selection="selection"
     :selected="selectedRows[idx] || allSelected || false"
     :columns="columns"
+    :wrap-cells="wrapCells"
     @on-select="(val) => $emit('onRowSelect', idx, val)"
   >
     <template v-for="(_, name) in $slots" #[name]="slotData">
@@ -20,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { SelectedRow, SelectionModes, VColumn } from './types';
+import { CellWrap, SelectedRow, SelectionModes, VColumn } from './types';
 import TableRow from './TableRow.vue';
 
 interface VScrollerProps {
@@ -34,6 +35,7 @@ interface VScrollerProps {
   selection: SelectionModes;
   allSelected: boolean;
   selectedRows: SelectedRow;
+  wrapCells: CellWrap;
 }
 
 withDefaults(defineProps<VScrollerProps>(), {
