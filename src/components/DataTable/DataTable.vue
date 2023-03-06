@@ -9,6 +9,12 @@
       />
     </div>
 
+    <div v-if="$slots.top || title" class="vdt-top">
+      <slot name="top">
+        <span v-if="title" class="vdt-top--title">{{ title }}</span>
+      </slot>
+    </div>
+
     <div ref="tableRef" class="vdt-table" role="table">
       <table-header
         :columns="columns"
@@ -60,6 +66,10 @@
       </virtual-scroller>
     </div>
 
+    <div v-if="$slots.bottom" class="vdt-bottom">
+      <slot name="bottom"></slot>
+    </div>
+
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
     <template v-if="reorderableColumns">
       <div
@@ -101,6 +111,7 @@ interface VGridProps {
   defaultFilters?: VFilter;
   defaultSorters?: VSorter;
   defaultColProps?: Partial<VColumn>;
+  title?: string;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -114,6 +125,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   resizableColumns: false,
   hightlightOnHover: false,
   stripedRows: false,
+  title: '',
   defaultFilters: () => {
     return {};
   },
@@ -128,7 +140,11 @@ const props = withDefaults(defineProps<VGridProps>(), {
   },
 });
 
-const columns = computed(() => getFinalColumns(props.columns));
+const columns = ref(getFinalColumns(props.columns));
+watch(
+  () => props.columns,
+  (newCols) => (columns.value = getFinalColumns(newCols))
+);
 function getFinalColumns(columns: VColumn[]): VColumn[] {
   return columns.map((col) => Object.assign({}, props.defaultColProps, col));
 }
@@ -452,15 +468,8 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 .vdt-col--separators {
   border-right: 1px solid rgba(255, 255, 255, 0.6);
 }
-.vdt-global-filter-input {
-  margin-left: 5px;
-  margin-right: 5px;
-}
 .clickable {
   cursor: pointer;
-}
-.vdt-hdr-filter {
-  padding: 5px;
 }
 .vdt--resizer {
   width: 1px;
@@ -469,9 +478,9 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   display: none;
   border: 1px solid var(--q-accent);
 }
-.vdt-table .vdt-thead > .vdt-th:last-child .vdt-column--resizer {
-  display: none;
-}
+</style>
+
+<style lang="scss" scoped>
 .vdt-table {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
@@ -480,5 +489,23 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   display: none;
   font-size: 2rem;
   z-index: 100;
+}
+.vdt-top {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 10px 10px 5px 10px;
+}
+.vdt-top--title {
+  font-size: 1.5em;
+}
+.vdt-bottom {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 5px 10px 10px 10px;
+}
+.vdt-hdr-filter {
+  padding: 5px;
+}
+.vdt-global-filter-input {
+  margin-left: 5px;
+  margin-right: 5px;
 }
 </style>
