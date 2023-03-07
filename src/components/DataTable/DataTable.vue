@@ -52,6 +52,7 @@
       </table-header>
 
       <virtual-scroller
+        v-if="processedRows.length"
         :rows="processedRows"
         :columns="columns"
         :line-height="lineHeight"
@@ -80,9 +81,9 @@
         </template>
       </virtual-scroller>
 
-      <!-- <div v-else class="vdt-no-data">
+      <div v-else class="vdt-no-data">
         <slot name="noData">{{ noDataText }}</slot>
-      </div> -->
+      </div>
     </div>
 
     <div v-if="$slots.bottom || selectedRowsCount" class="vdt-bottom">
