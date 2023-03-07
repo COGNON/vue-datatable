@@ -1,5 +1,9 @@
 <template>
-  <div>
+  <div class="vdt-container">
+    <div v-if="loading" class="vdt-loading">
+      <slot name="loading">{{ loadingText }}</slot>
+    </div>
+
     <div v-if="filterGlobal" class="vdt-global-filter">
       <q-input
         v-model="globalFilter"
@@ -48,9 +52,12 @@
       </table-header>
 
       <virtual-scroller
+        v-if="processedRows.length"
         :rows="processedRows"
         :columns="columns"
         :line-height="lineHeight"
+        :root-height="height"
+        :virtual-scroll-node-padding="virtualScrollNodePadding"
       >
         <template #content="scrollerProps">
           <table-body
@@ -64,6 +71,7 @@
             :selection="selection"
             :all-selected="allSelected"
             :selected-rows="selectedRows"
+            :wrap-cells="wrapCells"
             @on-row-select="onRowSelect"
           >
             <template v-for="(_, name) in $slots" #[name]="slotData">
@@ -72,6 +80,10 @@
           </table-body>
         </template>
       </virtual-scroller>
+
+      <div v-else class="vdt-no-data">
+        <slot name="noData">{{ noDataText }}</slot>
+      </div>
     </div>
 
     <div v-if="$slots.bottom || selectedRowsCount" class="vdt-bottom">
@@ -102,6 +114,7 @@ import {
   VSorter,
   SelectionModes,
   SelectedRow,
+  CellWrap,
 } from './types';
 import { computed, ref, toRef, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
@@ -131,6 +144,12 @@ interface VGridProps {
   title?: string;
   lineHeight?: number;
   selection?: SelectionModes;
+  wrapCells?: CellWrap;
+  loading?: boolean;
+  loadingText?: string;
+  noDataText?: string;
+  height?: number;
+  virtualScrollNodePadding?: number;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -147,6 +166,12 @@ const props = withDefaults(defineProps<VGridProps>(), {
   title: '',
   lineHeight: 48,
   selection: 'none',
+  wrapCells: 'none',
+  loading: false,
+  loadingText: 'Loading...',
+  noDataText: 'No data found',
+  height: 500,
+  virtualScrollNodePadding: 20,
   defaultFilters: () => {
     return {};
   },
@@ -532,6 +557,9 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 </style>
 
 <style lang="scss" scoped>
+.vdt-container {
+  position: relative;
+}
 .vdt-table {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
@@ -558,5 +586,18 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 .vdt-global-filter-input {
   margin-left: 5px;
   margin-right: 5px;
+}
+.vdt-loading {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
+.vdt-no-data {
+  padding: 10px;
 }
 </style>
