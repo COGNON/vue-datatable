@@ -11,8 +11,8 @@
       striped-rows
       wrap-cells="wrap"
       :loading="loading"
+      :height="700"
     >
-      <template #loading>Test</template>
     </DataTable>
   </div>
 </template>

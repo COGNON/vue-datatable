@@ -55,6 +55,8 @@
         :rows="processedRows"
         :columns="columns"
         :line-height="lineHeight"
+        :root-height="height"
+        :virtual-scroll-node-padding="virtualScrollNodePadding"
       >
         <template #content="scrollerProps">
           <table-body
@@ -77,6 +79,10 @@
           </table-body>
         </template>
       </virtual-scroller>
+
+      <!-- <div v-else class="vdt-no-data">
+        <slot name="noData">{{ noDataText }}</slot>
+      </div> -->
     </div>
 
     <div v-if="$slots.bottom || selectedRowsCount" class="vdt-bottom">
@@ -140,6 +146,9 @@ interface VGridProps {
   wrapCells?: CellWrap;
   loading?: boolean;
   loadingText?: string;
+  noDataText?: string;
+  height?: number;
+  virtualScrollNodePadding?: number;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -159,6 +168,9 @@ const props = withDefaults(defineProps<VGridProps>(), {
   wrapCells: 'none',
   loading: false,
   loadingText: 'Loading...',
+  noDataText: 'No data found',
+  height: 500,
+  virtualScrollNodePadding: 20,
   defaultFilters: () => {
     return {};
   },
@@ -583,5 +595,8 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   justify-content: center;
   align-items: center;
   z-index: 1;
+}
+.vdt-no-data {
+  padding: 10px;
 }
 </style>
