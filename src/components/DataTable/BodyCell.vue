@@ -30,5 +30,6 @@ defineProps<{
 
 .vdt-cell {
   padding: 5px;
+  display: inline-block;
 }
 </style>

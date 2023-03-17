@@ -19,72 +19,75 @@
       </slot>
     </div>
 
-    <div ref="tableRef" class="vdt-table" role="table">
-      <table-header
-        :columns="columns"
-        :row-separator-cls="rowSeparatorCls"
-        :col-separator-cls="colSeparatorCls"
-        :sorters="sorters"
-        :reorderable-columns="reorderableColumns"
-        :resizable-columns="resizableColumns"
-        :selection="selection"
-        :selected-rows="selectedRows"
-        :row-number="processedRows.length"
-        @update-sorter="updateSorters"
-        @on-resize-start="onColResizeStart"
-        @on-drag-start="onColDragStart"
-        @on-drag-end="onColDragEnd"
-        @on-drag-over="onColDragOver"
-        @on-drop="onColDrop"
-        @on-select-all="onSelectAll"
-      >
-        <template v-for="(_, name) in $slots" #[name]="slotData">
-          <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
-        </template>
+    <virtual-scroller
+      ref="tableRef"
+      class="vdt-table"
+      role="table"
+      :rows="processedRows"
+      :columns="columns"
+      :line-height="lineHeight"
+      :root-height="height"
+      :virtual-scroll-node-padding="virtualScrollNodePadding"
+    >
+      <template #before>
+        <table-header
+          :columns="columns"
+          :row-separator-cls="rowSeparatorCls"
+          :col-separator-cls="colSeparatorCls"
+          :sorters="sorters"
+          :reorderable-columns="reorderableColumns"
+          :resizable-columns="resizableColumns"
+          :selection="selection"
+          :selected-rows="selectedRows"
+          :row-number="processedRows.length"
+          @update-sorter="updateSorters"
+          @on-resize-start="onColResizeStart"
+          @on-drag-start="onColDragStart"
+          @on-drag-end="onColDragEnd"
+          @on-drag-over="onColDragOver"
+          @on-drop="onColDrop"
+          @on-select-all="onSelectAll"
+        >
+          <template v-for="(_, name) in $slots" #[name]="slotData">
+            <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
+          </template>
 
-        <template v-if="filterHeader" #filter="colProps">
-          <q-input
-            v-model="filters[colProps.col.field]"
-            class="vdt-hdr-filter"
-            v-bind="filterComponentProps"
-          />
-        </template>
-      </table-header>
+          <template v-if="filterHeader" #filter="colProps">
+            <q-input
+              v-model="filters[colProps.col.field]"
+              class="vdt-hdr-filter"
+              v-bind="filterComponentProps"
+            />
+          </template>
+        </table-header>
+      </template>
 
-      <virtual-scroller
-        v-if="processedRows.length"
-        :rows="processedRows"
-        :columns="columns"
-        :line-height="lineHeight"
-        :root-height="height"
-        :virtual-scroll-node-padding="virtualScrollNodePadding"
-      >
-        <template #content="scrollerProps">
-          <table-body
-            :rows="scrollerProps.visibleRows"
-            :line-height="lineHeight"
-            :columns="columns"
-            :row-separator-cls="rowSeparatorCls"
-            :col-separator-cls="colSeparatorCls"
-            :hightlight-on-hover="hightlightOnHover"
-            :striped-rows="stripedRows"
-            :selection="selection"
-            :all-selected="allSelected"
-            :selected-rows="selectedRows"
-            :wrap-cells="wrapCells"
-            @on-row-select="onRowSelect"
-          >
-            <template v-for="(_, name) in $slots" #[name]="slotData">
-              <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
-            </template>
-          </table-body>
-        </template>
-      </virtual-scroller>
+      <template #content="scrollerProps">
+        <table-body
+          v-if="processedRows.length"
+          :rows="scrollerProps.visibleRows"
+          :line-height="lineHeight"
+          :columns="columns"
+          :row-separator-cls="rowSeparatorCls"
+          :col-separator-cls="colSeparatorCls"
+          :hightlight-on-hover="hightlightOnHover"
+          :striped-rows="stripedRows"
+          :selection="selection"
+          :all-selected="allSelected"
+          :selected-rows="selectedRows"
+          :wrap-cells="wrapCells"
+          @on-row-select="onRowSelect"
+        >
+          <template v-for="(_, name) in $slots" #[name]="slotData">
+            <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
+          </template>
+        </table-body>
 
-      <div v-else class="vdt-no-data">
-        <slot name="noData">{{ noDataText }}</slot>
-      </div>
-    </div>
+        <div v-else class="vdt-no-data">
+          <slot name="noData">{{ noDataText }}</slot>
+        </div>
+      </template>
+    </virtual-scroller>
 
     <div v-if="$slots.bottom || selectedRowsCount" class="vdt-bottom">
       <slot name="bottom">
@@ -170,7 +173,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   loading: false,
   loadingText: 'Loading...',
   noDataText: 'No data found',
-  height: 500,
+  height: 400,
   virtualScrollNodePadding: 20,
   defaultFilters: () => {
     return {};
