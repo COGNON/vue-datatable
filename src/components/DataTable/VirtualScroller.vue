@@ -1,10 +1,14 @@
 <template>
-  <div ref="root" class="vdt-tbody" :style="rootStyle" @scroll="onScroll">
+  <div class="scroller-wrapper" :style="rootStyle" @scroll="onScroll">
+    <slot name="before" />
+
     <div ref="viewport" class="vdt-viewscroller" :style="viewportStyle">
       <div ref="spacer" class="vdt-spacer" :style="spacerStyle">
         <slot name="content" :visible-rows="visibleRows" />
       </div>
     </div>
+
+    <slot name="footer" />
   </div>
 </template>
 
@@ -22,7 +26,6 @@ interface VScrollerProps {
 
 const props = defineProps<VScrollerProps>();
 
-const root = ref(null);
 const viewport = ref(null);
 const spacer = ref(null);
 
@@ -72,17 +75,20 @@ const spacerStyle = computed(() => {
 });
 
 const viewportStyle = computed(() => {
-  return {
-    overflow: 'hidden',
-    height: viewportHeight.value + 'px',
-    position: 'relative',
-  };
+  return { height: viewportHeight.value + 'px' };
 });
 
 const rootStyle = computed(() => {
-  return {
-    height: props.rootHeight + 'px',
-    overflow: 'auto',
-  };
+  return { height: props.rootHeight + 'px' };
 });
 </script>
+
+<style lang="scss" scoped>
+.scroller-wrapper {
+  overflow: auto;
+}
+.vdt-viewscroller {
+  position: relative;
+  width: fit-content;
+}
+</style>

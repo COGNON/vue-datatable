@@ -89,10 +89,16 @@ watch(
 
 <style lang="scss" scoped>
 .vdt-thead {
-  display: flex;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  width: fit-content;
 }
 .vdt-th {
   padding: 5px;
+  display: inline-block;
+  background-color: var(--q-dark-page);
 }
 .vdt-th--selection {
   text-align: center;

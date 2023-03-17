@@ -85,7 +85,7 @@ const wrapStyle = computed(() =>
 
 <style lang="scss" scoped>
 .vdt-row {
-  display: flex;
+  white-space: nowrap;
 }
 .vdt-row--striped {
   background-color: rgba(255, 255, 255, 0.05);
