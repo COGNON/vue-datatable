@@ -11,7 +11,8 @@
       striped-rows
       wrap-cells="wrap"
       :loading="loading"
-      :height="700"
+      :height="500"
+      :pagination="50"
     >
     </DataTable>
   </div>

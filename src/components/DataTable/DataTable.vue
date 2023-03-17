@@ -19,7 +19,66 @@
       </slot>
     </div>
 
+    <div
+      v-if="pagination !== 0"
+      class="vdt-table"
+      role="table"
+      :style="{ overflow: 'auto', height: height + 'px' }"
+    >
+      <table-header
+        :columns="columns"
+        :row-separator-cls="rowSeparatorCls"
+        :col-separator-cls="colSeparatorCls"
+        :sorters="sorters"
+        :reorderable-columns="reorderableColumns"
+        :resizable-columns="resizableColumns"
+        :selection="selection"
+        :selected-rows="selectedRows"
+        :row-number="processedRows.length"
+        @update-sorter="updateSorters"
+        @on-resize-start="onColResizeStart"
+        @on-drag-start="onColDragStart"
+        @on-drag-end="onColDragEnd"
+        @on-drag-over="onColDragOver"
+        @on-drop="onColDrop"
+        @on-select-all="onSelectAll"
+      >
+        <template v-for="(_, name) in $slots" #[name]="slotData">
+          <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
+        </template>
+
+        <template v-if="filterHeader" #filter="colProps">
+          <q-input
+            v-model="filters[colProps.col.field]"
+            class="vdt-hdr-filter"
+            v-bind="filterComponentProps"
+          />
+        </template>
+      </table-header>
+
+      <table-body
+        v-if="processedRows.length"
+        :rows="processedRows[currentPage]"
+        :line-height="lineHeight"
+        :columns="columns"
+        :row-separator-cls="rowSeparatorCls"
+        :col-separator-cls="colSeparatorCls"
+        :hightlight-on-hover="hightlightOnHover"
+        :striped-rows="stripedRows"
+        :selection="selection"
+        :all-selected="allSelected"
+        :selected-rows="selectedRows"
+        :wrap-cells="wrapCells"
+        @on-row-select="onRowSelect"
+      >
+        <template v-for="(_, name) in $slots" #[name]="slotData">
+          <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
+        </template>
+      </table-body>
+    </div>
+
     <virtual-scroller
+      v-else
       ref="tableRef"
       class="vdt-table"
       role="table"
@@ -89,10 +148,28 @@
       </template>
     </virtual-scroller>
 
-    <div v-if="$slots.bottom || selectedRowsCount" class="vdt-bottom">
+    <div
+      v-if="$slots.bottom || selectedRowsCount || pagination"
+      class="vdt-bottom"
+    >
       <slot name="bottom">
         <div v-if="selectedRowsCount">{{ selectedRowsCount }} selected</div>
       </slot>
+
+      <div class="vdt-bottom-spacer" />
+
+      <div class="vdt-pagination">
+        <slot name="pagination">
+          <table-paginator
+            v-if="pagination"
+            :current-page="currentPage"
+            :total-page-num="processedRows.length"
+            :rows-per-page="pagination"
+            :total-row-count="totalRowCount"
+            @update-page="(newPage) => (currentPage = newPage)"
+          />
+        </slot>
+      </div>
     </div>
 
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
@@ -119,12 +196,13 @@ import {
   SelectedRow,
   CellWrap,
 } from './types';
-import { computed, ref, toRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
 import VirtualScroller from './VirtualScroller.vue';
 import FilterComponent from './FilterComponent.vue';
 import { QInputProps } from 'quasar';
+import TablePaginator from './TablePaginator.vue';
 
 const tableRef = ref<HTMLElement | undefined>();
 const resizerRef = ref<HTMLElement | undefined>();
@@ -153,6 +231,7 @@ interface VGridProps {
   noDataText?: string;
   height?: number;
   virtualScrollNodePadding?: number;
+  pagination?: number;
 }
 
 const props = withDefaults(defineProps<VGridProps>(), {
@@ -167,7 +246,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   hightlightOnHover: false,
   stripedRows: false,
   title: '',
-  lineHeight: 48,
+  lineHeight: 30,
   selection: 'none',
   wrapCells: 'none',
   loading: false,
@@ -175,6 +254,7 @@ const props = withDefaults(defineProps<VGridProps>(), {
   noDataText: 'No data found',
   height: 400,
   virtualScrollNodePadding: 20,
+  pagination: 0,
   defaultFilters: () => {
     return {};
   },
@@ -189,6 +269,9 @@ const props = withDefaults(defineProps<VGridProps>(), {
   },
 });
 
+const currentPage = ref(0);
+const totalRowCount = ref(0);
+
 const columns = ref(getFinalColumns(props.columns));
 watch(
   () => props.columns,
@@ -198,7 +281,51 @@ function getFinalColumns(columns: VColumn[]): VColumn[] {
   return columns.map((col) => Object.assign({}, props.defaultColProps, col));
 }
 
-const processedRows = toRef(props, 'rows');
+const sorters = ref<VSorter>(props.defaultSorters);
+
+const filters = ref<VFilter>(props.defaultFilters);
+const filterComponentProps: Partial<QInputProps> = {
+  dense: true,
+  filled: true,
+  label: 'Search',
+};
+
+function filterRows(filters: VFilter | string, rows: any[]): any[] {
+  if (typeof filters === 'string' && filters) {
+    // global filter
+    return rows.filter((row) => {
+      return Object.values(row).some((value) => {
+        return String(value).toLowerCase().includes(filters.toLowerCase());
+      });
+    });
+  }
+
+  // no filters, return original rows
+  if (!Object.keys(filters).length) return props.rows;
+
+  return rows.filter((row) => {
+    return Object.keys(filters).every((field) => {
+      if (!filters[field]) {
+        delete filters[field];
+        return true;
+      }
+      return row[field]
+        ? row[field].toLowerCase().includes(filters[field].toLowerCase())
+        : false;
+    });
+  });
+}
+
+const processedRows = ref(processRows(props.rows));
+watch(
+  () => props.rows,
+  (newRows) => (processedRows.value = processRows(newRows))
+);
+
+watch(
+  () => props.pagination,
+  () => (processedRows.value = processRows(props.rows))
+);
 
 const allSelected = ref(false);
 const selectedRows = ref<SelectedRow>({});
@@ -230,51 +357,17 @@ function onRowSelect(rowIdx: number, selected: boolean) {
 const selectedRowsCount = computed(
   () => Object.keys(selectedRows.value).length
 );
-
 const rowSeparatorCls = computed<string>(() =>
   props.separators.match(/row|cell/) ? 'vdt-row--separators' : ''
 );
-
 const colSeparatorCls = computed<string>(() =>
   props.separators.match(/column|cell/) ? 'vdt-col--separators' : ''
 );
 
-const filters = ref<VFilter>(props.defaultFilters);
-
-const filterComponentProps: Partial<QInputProps> = {
-  dense: true,
-  filled: true,
-  label: 'Search',
-};
-
-function filterRows(filters: VFilter | string, rows: any[]): any[] {
-  if (typeof filters === 'string' && filters) {
-    // global filter
-    return rows.filter((row) => {
-      return Object.values(row).some((value) => {
-        return String(value).toLowerCase().includes(filters.toLowerCase());
-      });
-    });
-  }
-
-  // no filters, return original rows
-  if (!Object.keys(filters).length) return props.rows;
-
-  return rows.filter((row) => {
-    return Object.keys(filters).every((field) => {
-      if (!filters[field]) {
-        delete filters[field];
-        return true;
-      }
-      return row[field].toLowerCase().includes(filters[field].toLowerCase());
-    });
-  });
-}
-
 watch(
   filters,
   (newFilters) =>
-    (processedRows.value = filterRows(newFilters, processedRows.value)),
+    (processedRows.value = processRows(filterRows(newFilters, props.rows))),
   {
     deep: true,
   }
@@ -283,13 +376,16 @@ watch(
 const globalFilter = ref();
 watch(globalFilter, (newFilter) => {
   // use the original rows. if user backspaces from no rows filtered, it will still return no rows
-  processedRows.value = filterRows(newFilter, props.rows);
+  processedRows.value = processRows(filterRows(newFilter, props.rows));
 });
 
-const sorters = ref<VSorter>(props.defaultSorters);
-watch(sorters, () => (processedRows.value = sortRows(processedRows.value)), {
-  deep: true,
-});
+watch(
+  sorters,
+  () => (processedRows.value = processRows(sortRows(processedRows.value))),
+  {
+    deep: true,
+  }
+);
 
 function updateSorters(e: MouseEvent, field: string): void {
   if (e.ctrlKey) {
@@ -373,6 +469,22 @@ function multiSort(fields: string[]) {
     }
     return 0;
   };
+}
+
+function pageRows(rows: any[]): any[] {
+  if (props.pagination === 0) return rows;
+  totalRowCount.value = 0;
+  let pagedRows: any[] = [];
+  for (let i = 0; i < rows.length; i += props.pagination) {
+    const sliced = rows.slice(i, i + props.pagination);
+    totalRowCount.value += sliced.length;
+    pagedRows.push(sliced);
+  }
+  return pagedRows;
+}
+
+function processRows(rows: any[]): any[] {
+  return pageRows(sortRows(filterRows(filters.value, rows)));
 }
 
 const resizingCol = ref(false);
@@ -582,6 +694,7 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 .vdt-bottom {
   border: 1px solid rgba(255, 255, 255, 0.6);
   padding: 5px 10px 10px 10px;
+  display: flex;
 }
 .vdt-hdr-filter {
   padding: 5px;
@@ -602,5 +715,8 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 }
 .vdt-no-data {
   padding: 10px;
+}
+.vdt-bottom-spacer {
+  flex-grow: 1;
 }
 </style>

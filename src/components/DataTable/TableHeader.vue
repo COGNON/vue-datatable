@@ -26,9 +26,10 @@
         :sorter="sorters[col.field]"
         :resizable-columns="resizableColumns"
         :field="col.field"
+        :draggable="true"
         @update-sorter="(e) => $emit('updateSorter', e, col.field)"
         @on-resize-start="(e) => $emit('onResizeStart', e, col)"
-        @dragstart="(e:DragEvent) => $emit('onDragStart',e)"
+        @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
         @dragend="(e:DragEvent) => $emit('onDragEnd', e)"
         @dragover="(e:DragEvent) => $emit('onDragOver', e)"
         @drop="(e:DragEvent) => $emit('onDrop',e)"
@@ -94,11 +95,11 @@ watch(
   top: 0;
   z-index: 2;
   width: fit-content;
+  background-color: var(--q-dark-page);
 }
 .vdt-th {
   padding: 5px;
   display: inline-block;
-  background-color: var(--q-dark-page);
 }
 .vdt-th--selection {
   text-align: center;
