@@ -18,54 +18,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import DataTable from 'src/components/DataTable/DataTable.vue';
 import { VColumn } from 'src/components/DataTable/types';
+import data from 'src/generated.json';
 
 const loading = ref(false);
 
-const rows = ref([]);
+const rows = ref(data);
 const columns: VColumn[] = [
   {
-    field: 'id',
+    field: '_id',
     header: 'ID',
-    width: 100,
-    resizable: true,
+    width: 150,
   },
   {
     field: 'name',
     header: 'Name',
+    width: 150,
+  },
+  {
+    field: 'balance',
+    header: 'Balance',
     width: 100,
   },
   {
-    field: 'incantation',
-    header: 'Incantation',
+    field: 'age',
+    header: 'Age',
+    width: 80,
+  },
+  {
+    field: 'gender',
+    header: 'Gender',
     width: 100,
   },
   {
-    field: 'effect',
-    header: 'Effect',
-    width: 100,
+    field: 'company',
+    header: 'Company',
+    width: 120,
   },
   {
-    field: 'type',
-    header: 'School',
-    width: 100,
+    field: 'email',
+    header: 'Email',
+    width: 300,
   },
   {
-    field: 'light',
-    header: 'Color',
-    width: 100,
+    field: 'phone',
+    header: 'Phone',
+    width: 150,
+  },
+  {
+    field: 'greeting',
+    header: 'Greeting',
+    width: 300,
+  },
+  {
+    field: 'registered',
+    header: 'Registered',
+    width: 200,
   },
 ];
-
-onMounted(async () => {
-  if (rows.value.length) return;
-
-  loading.value = true;
-
-  const response = await fetch('https://wizard-world-api.herokuapp.com/Spells');
-  rows.value = await response.json();
-  loading.value = false;
-});
 </script>
