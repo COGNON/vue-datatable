@@ -12,7 +12,6 @@
       wrap-cells="wrap"
       :loading="loading"
       :height="500"
-      :pagination="50"
     >
     </DataTable>
   </div>
@@ -20,7 +19,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import DataTable from 'src/components/DataTable/DataTable.vue';
+import DataTable from 'src/components/dataTable2/DataTable.vue';
 import { VColumn } from 'src/components/DataTable/types';
 import data from 'src/generated.json';
 
@@ -46,7 +45,7 @@ const columns: VColumn[] = [
   {
     field: 'age',
     header: 'Age',
-    width: 80,
+    width: 150,
   },
   {
     field: 'gender',

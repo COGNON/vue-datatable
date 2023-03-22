@@ -1,5 +1,5 @@
 <template>
-  <div :class="`vdt-thead ${rowSeparatorCls}`">
+  <div :class="`vdt-thead ${rowSeparatorCls}`" role="presentation">
     <div
       v-if="selection !== 'none'"
       :class="`vdt-th vdt-th--selection vdt-cell--extra ${colSeparatorCls}`"

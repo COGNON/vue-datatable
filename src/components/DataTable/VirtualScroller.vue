@@ -2,9 +2,27 @@
   <div class="scroller-wrapper" :style="rootStyle" @scroll="onScroll">
     <slot name="before" />
 
-    <div ref="viewport" class="vdt-viewscroller" :style="viewportStyle">
-      <div ref="spacer" class="vdt-spacer" :style="spacerStyle">
-        <slot name="content" :visible-rows="visibleRows" />
+    <div class="vdt-body">
+      <div ref="viewport" class="vdt-viewscroller" :style="viewportStyle">
+        <div ref="spacer" class="vdt-spacer" :style="spacerStyle">
+          <slot name="content" :visible-rows="visibleRows" />
+        </div>
+      </div>
+
+      <div
+        class="vdt-body-vertical-scroller"
+        :aria-hidden="true"
+        :style="verticalScrollerStyle"
+      >
+        <div
+          class="vdt-body-vertical-scroller-viewport"
+          :style="verticalScrollerStyle"
+        >
+          <div
+            class="vdt-body-vertical-scroller-container"
+            :style="{ ...verticalScrollerStyle, ...viewportStyle }"
+          />
+        </div>
       </div>
     </div>
 
@@ -81,6 +99,12 @@ const viewportStyle = computed(() => {
 const rootStyle = computed(() => {
   return { height: props.rootHeight + 'px' };
 });
+
+const verticalScrollerStyle = {
+  width: '15px',
+  maxWidth: '15px',
+  minWidth: '15px',
+};
 </script>
 
 <style lang="scss" scoped>
@@ -90,5 +114,25 @@ const rootStyle = computed(() => {
 .vdt-viewscroller {
   position: relative;
   width: fit-content;
+}
+.vdt-body-vertical-scroller {
+  height: 100%;
+  display: flex;
+  position: relative;
+}
+.vdt-body-vertical-scroller-viewport {
+  overflow: hidden;
+  overflow-y: scroll;
+  position: relative;
+  height: 100%;
+  flex: 1 1 auto;
+}
+.vdt-body-vertical-scroller-container {
+  position: relative;
+}
+.vdt-body {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
 }
 </style>

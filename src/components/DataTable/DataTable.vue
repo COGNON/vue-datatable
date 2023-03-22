@@ -22,7 +22,9 @@
     <div
       v-if="pagination !== 0"
       class="vdt-table"
-      role="table"
+      role="tablegrid"
+      :aria-colcount="columns.length"
+      :aria-rowcount="pagination ? totalRowCount : processedRows.length"
       :style="{ overflow: 'auto', height: height + 'px' }"
     >
       <table-header
@@ -553,7 +555,7 @@ function onColDrop(e: DragEvent) {
   if (!targetCol) return;
 
   const data = e.dataTransfer?.getData('text');
-  const [srcField, placeOnRight] = data?.split('~~');
+  const [srcField] = data?.split('~~');
 
   const destField = targetCol.getAttribute('field');
 
