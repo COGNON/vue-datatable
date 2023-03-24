@@ -1,5 +1,6 @@
-export interface VColumn {
-  field?: string;
+export interface VColumn<T = unknown> {
+  name: string;
+  field: string | ((row: T) => unknown);
   header: string;
   width?: number;
   resizable?: boolean;
@@ -16,20 +17,13 @@ export type VFilter = {
   [key: string]: string;
 };
 
-export type VSorterData = {
+export type VSorter = {
   field: string;
-  dir: 'asc' | 'des';
-  num: number;
+  dir: 'asc' | 'desc';
 };
 
-export interface VSorter {
-  [key: string]: VSorterData;
-}
-
 export type CellSeparators = 'row' | 'column' | 'cell' | 'none';
-
 export type SelectionModes = 'single' | 'multiple' | 'none';
-
 export type CellWrap = 'none' | 'wrap';
 
 export type SelectedRow = {

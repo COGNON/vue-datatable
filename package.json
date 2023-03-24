@@ -1,9 +1,9 @@
 {
-  "name": "legends-arceus",
+  "name": "vue-data-table",
   "version": "0.1.0",
-  "description": "Legends Arceus Checklist",
-  "productName": "Legends Arceus",
-  "author": "nialara",
+  "description": "Vue DataTable",
+  "productName": "Vue DataTable",
+  "author": "COGNON",
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
@@ -15,7 +15,6 @@
     "axios": "^1.2.1",
     "pinia": "^2.0.11",
     "quasar": "^2.6.0",
-    "tabulator-tables": "^5.4.3",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0"
   },

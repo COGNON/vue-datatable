@@ -2,16 +2,16 @@
   <div class="q-pa-md">
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="columns1"
       filter-header
       separators="cell"
       reorderable-columns
       resizable-columns
-      hightlight-on-hover
-      striped-rows
       wrap-cells="wrap"
       :loading="loading"
       :height="500"
+      borders="both"
+      bordered
     >
     </DataTable>
   </div>
@@ -26,53 +26,63 @@ import data from 'src/generated.json';
 const loading = ref(false);
 
 const rows = ref(data);
-const columns: VColumn[] = [
+const columns1: VColumn[] = [
   {
+    name: 'id',
     field: '_id',
     header: 'ID',
     width: 150,
   },
   {
+    name: 'name',
     field: 'name',
     header: 'Name',
     width: 150,
   },
   {
+    name: 'balance',
     field: 'balance',
     header: 'Balance',
     width: 100,
   },
   {
+    name: 'age',
     field: 'age',
     header: 'Age',
     width: 150,
   },
   {
+    name: 'gender',
     field: 'gender',
     header: 'Gender',
     width: 100,
   },
   {
+    name: 'company',
     field: 'company',
     header: 'Company',
     width: 120,
   },
   {
+    name: 'email',
     field: 'email',
     header: 'Email',
     width: 300,
   },
   {
+    name: 'phone',
     field: 'phone',
     header: 'Phone',
     width: 150,
   },
   {
+    name: 'greeting',
     field: 'greeting',
     header: 'Greeting',
     width: 300,
   },
   {
+    name: 'registered',
     field: 'registered',
     header: 'Registered',
     width: 200,

@@ -1,9 +1,6 @@
 <template>
   <div :class="`vdt-thead ${rowSeparatorCls}`" role="presentation">
-    <div
-      v-if="selection !== 'none'"
-      :class="`vdt-th vdt-th--selection vdt-cell--extra ${colSeparatorCls}`"
-    >
+    <div v-if="selection !== 'none'" :class="`vdt-th vdt-th--selection vdt-cell--extra ${colSeparatorCls}`">
       <slot name="header-cell-selection">
         <q-checkbox
           v-if="selection === 'multiple'"
@@ -13,21 +10,18 @@
       </slot>
     </div>
 
-    <div
-      v-if="$slots['expanded']"
-      :class="`vdt-th vdt-td--expand ${colSeparatorCls}`"
-    />
+    <div v-if="$slots['expanded']" :class="`vdt-th vdt-td--expand ${colSeparatorCls}`" />
 
     <template v-for="col in columns" :key="col.field">
       <header-cell
         :column="col"
         :class="`vdt-th ${colSeparatorCls}`"
         :style="`width:${col.width}px;`"
-        :sorter="sorters[col.field]"
+        :sorter="sorters[col.name]"
         :resizable-columns="resizableColumns"
         :field="col.field"
         :draggable="true"
-        @update-sorter="(e) => $emit('updateSorter', e, col.field)"
+        @update-sorter="(e) => $emit('updateSorter', e, col.name)"
         @on-resize-start="(e) => $emit('onResizeStart', e, col)"
         @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
         @dragend="(e:DragEvent) => $emit('onDragEnd', e)"
@@ -82,9 +76,7 @@ const allSelected = ref(false);
 watch(
   () => props.selectedRows,
   (newSelected) =>
-    newSelected && Object.keys(newSelected).length === props.rowNumber
-      ? (allSelected.value = true)
-      : null
+    newSelected && Object.keys(newSelected).length === props.rowNumber ? (allSelected.value = true) : null
 );
 </script>
 

@@ -1,19 +1,14 @@
 <template>
   <div
-    class="vdt--root-wrapper"
+    ref="rootRef"
+    :class="`vdt--root-wrapper ${tableBorderCls}`"
     role="presentation"
     :style="{ height: `${rootHeight}px` }"
   >
-    <div ref="resizerRef" class="vdt--resizer" />
-    <div class="vdt--column-drop-wrapper" role="presentation">
-      <div
-        ref="dropColIndicatorDown"
-        class="mdi mdi-arrow-down-bold vdt--drop-indicator"
-      />
-      <div
-        ref="dropColIndicatorUp"
-        class="mdi mdi-arrow-up-bold vdt--drop-indicator"
-      />
+    <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer" />
+    <div v-if="reorderableColumns" class="vdt--column-drop-wrapper" role="presentation">
+      <div ref="dropColIndicatorDown" class="mdi mdi-arrow-down-bold vdt--drop-indicator" />
+      <div ref="dropColIndicatorUp" class="mdi mdi-arrow-up-bold vdt--drop-indicator" />
     </div>
 
     <div class="vdt--root-wrapper-body" role="presentation">
@@ -23,107 +18,69 @@
         :aria-colcount="processedColumns.length"
         :aria-multiselectable="true"
         :aria-rowcount="rows.length"
+        :class="`${cellBorderCls} ${hoverCls} ${stripedCls}`"
       >
         <table-header
           :columns="processedColumns"
-          :thead-container-style="theadContainerStyle"
-          :thead-tr-style="theadTrStyle"
+          :col-widths="colWidths"
+          :scroll-left="scrollLeft"
           :row-height="rowHeight"
+          :resizable-columns="resizableColumns"
+          :reorderable-columns="reorderableColumns"
+          :sorters="sorters"
+          :filters="filters"
+          @update-sorter="updateSorters"
           @on-resize-start="onColResizeStart"
-        />
+          @on-drag-start="onColDragStart"
+          @on-drag-end="onColDragEnd"
+          @on-drag-over="onColDragOver"
+          @on-drop="onColDrop"
+        >
+          <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+            <slot v-if="String(slotName).startsWith('header')" :name="slotName" v-bind="slotProps || {}" />
+          </template>
+        </table-header>
 
-        <div class="vdt--tbody" role="presentation" :style="tbodyStyle">
-          <div class="vdt--tbody-clipper" role="presentation">
-            <div
-              ref="tbodyScrollRef"
-              class="vdt--tbody-viewport"
-              role="presentation"
-              :style="tbodyViewportStyle"
-            >
-              <div
-                class="vdt--tbody-container"
-                role="rowgroup"
-                :style="tbodyContainerStyle"
-              >
-                <div
-                  v-for="(row, rowIdx) in visibleRows"
-                  :key="rowIdx"
-                  class="vdt--row"
-                  :class="rowIdx % 2 ? 'vdt--row-even' : 'vdt--row-odd'"
-                  :style="{ height: `${rowHeight}px` }"
-                  :row-index="rowIdx"
-                  role="row"
-                >
-                  <div
-                    v-for="(col, colIdx) in processedColumns"
-                    :key="colIdx"
-                    class="vdt--cell"
-                    :aria-colcount="colIdx + 1"
-                    tabindex="-1"
-                    role="gridcell"
-                    :style="{ width: `${col.width}px` }"
-                  >
-                    {{ row[col.field] }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- fake vertical scroll -->
-          <!-- <div
-            class="vdt--tbody-vscroll"
-            aria-hidden="true"
-            :style="tbodyVscrollStyle"
-          > -->
-          <div
-            ref="vscrollRef"
-            class="vdt--tbody-vscroll-viewport"
-            :style="tbodyVscrollStyle"
-            @mousedown="(e) => handleVScrollEvent(e, true)"
-            @mouseup="(e) => handleVScrollEvent(e, false)"
+        <virtual-scroller
+          v-slot="{ processedRows, startNode }"
+          :rows="rows"
+          :columns="processedColumns"
+          :root-height="rootHeight"
+          :virtual-scroll-node-padding="virtualScrollNodePadding"
+          :row-height="rowHeight"
+          :col-widths="colWidths"
+          :scroll-left="scrollLeft"
+          :striped-rows="stripedRows"
+        >
+          <table-body
+            :rows="processedRows"
+            :columns="processedColumns"
+            :row-height="rowHeight"
+            :col-widths="colWidths"
+            :virtual-start-node="startNode"
           >
-            <div
-              class="vdt--tbody-vscroll-container"
-              :style="{ ...tbodyVscrollStyle, height: `${tbodyHeight}px` }"
-            />
-          </div>
-          <!-- </div> -->
-        </div>
+            <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+              <slot v-if="String(slotName).startsWith('body')" :name="slotName" v-bind="slotProps || {}" />
+            </template>
+          </table-body>
+        </virtual-scroller>
 
         <!-- fake horizontal scroll -->
-        <div
-          class="vdt--tbody-hscroll"
-          aria-hidden="true"
-          :style="tbodyHscrollStyle"
-        >
-          <div
-            class="vdt--tbody-hscroll-lspacer"
-            style="width: 0px; max-width: 0px; min-width: 0px"
-          />
-          <div
-            ref="hscrollRef"
-            class="vdt--tbody-hscroll-viewport"
-            :style="tbodyHscrollStyle"
-            @mousedown="(e) => handleHScrollEvent(e, true)"
-            @mouseup="(e) => handleHScrollEvent(e, false)"
-          >
-            <div
-              class="vdt--tbody-hscroll-container"
-              :style="{ ...tbodyHscrollStyle, width: `${colWidths}px` }"
-            />
-          </div>
-          <div class="vdt--tbody-hscroll-rspacer" :style="tbodyVscrollStyle" />
-        </div>
+        <fake-horizontal-scroll :col-widths="colWidths" @update-scroll="(val) => (scrollLeft = val)" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
-import { VColumn } from '../DataTable/types';
+import { computed, ref, toRef, watch } from 'vue';
+import { VColumn, VFilter, VSorter } from '../DataTable/types';
 import TableHeader from './TableHeader.vue';
+import FakeHorizontalScroll from './FakeHorizontalScroll.vue';
+import VirtualScroller from './VirtualScroller.vue';
+import TableBody from './TableBody.vue';
+import { findSorterIndex } from '../utils';
+import { useSorter } from 'src/composables/useSorter';
 
 interface Props {
   columns: VColumn[];
@@ -131,18 +88,48 @@ interface Props {
   rootHeight?: number;
   rowHeight?: number;
   virtualScrollNodePadding?: number;
+  borders?: 'cell' | 'row' | 'both' | 'none';
+  bordered?: boolean;
+  resizableColumns?: boolean;
+  reorderableColumns?: boolean;
+  hightlightOnHover?: boolean;
+  stripedRows?: boolean;
+  defaultFilters?: VFilter;
+  defaultSorters?: VSorter[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   rootHeight: 600,
   rowHeight: 28,
   virtualScrollNodePadding: 20,
+  borders: 'none',
+  bordered: false,
+  resizableColumns: false,
+  reorderableColumns: false,
+  hightlightOnHover: false,
+  stripedRows: false,
+  defaultFilters: () => {
+    return {};
+  },
+  defaultSorters: () => [],
 });
 
 const resizerRef = ref<HTMLElement | undefined>();
-const tbodyScrollRef = ref<HTMLElement | undefined>();
-const vscrollRef = ref<HTMLElement | undefined>();
-const hscrollRef = ref<HTMLElement | undefined>();
+const rootRef = ref<HTMLElement | undefined>();
+
+const cellBorderCls = computed(() => {
+  if (props.borders === 'none') return '';
+
+  let cls = [];
+  if (props.borders.match(/both|cell/)) cls.push('vdt--cell-borders');
+  if (props.borders.match(/both|row/)) cls.push('vdt--row-borders');
+
+  return cls.join(' ');
+});
+
+const tableBorderCls = computed(() => (props.bordered ? 'vdt--table-border' : ''));
+const hoverCls = computed(() => (props.hightlightOnHover ? 'vdt--row-highlight' : ''));
+const stripedCls = computed(() => (props.stripedRows ? 'vdt--striped-rows' : ''));
 
 const processedColumns = ref(processColumns(props.columns));
 watch(
@@ -154,118 +141,102 @@ function processColumns(columns: VColumn[]) {
   return columns;
 }
 
+const { sortRows } = useSorter();
+const sorters = ref(props.defaultSorters);
+
+const rows = ref(processRows(props.rows));
+watch(
+  () => props.defaultSorters,
+  (newSorters) => {
+    sorters.value = newSorters;
+    rows.value = sortRows(newSorters, rows.value);
+  }
+);
+
+function updateSorters(e: MouseEvent, field: string): void {
+  const sorterIdx = findSorterIndex(sorters.value, field);
+  if (e.ctrlKey) {
+    // multi-sort key
+    if (sorterIdx === -1) {
+      // sorter doesn't exist, add to end
+      sorters.value.push({ field: field, dir: 'asc' });
+    } else {
+      // check direction
+      if (sorters.value[sorterIdx]['dir'] === 'asc') {
+        // swap to des
+        sorters.value[sorterIdx]['dir'] = 'desc';
+      } else {
+        // remove sorter
+        sorters.value.splice(sorterIdx, 1);
+      }
+    }
+  } else {
+    if (sorterIdx === -1) {
+      // replace sorters
+      sorters.value = [{ field: field, dir: 'asc' }];
+    } else {
+      // sorter exists
+      if (sorters.value[sorterIdx]['dir'] === 'asc') {
+        // swap to des
+        sorters.value = [{ field: field, dir: 'desc' }];
+      } else {
+        // remove sorter
+        sorters.value = [];
+      }
+    }
+  }
+
+  rows.value = sortRows(sorters.value, props.rows);
+}
+
+const filters = ref(props.defaultFilters);
+watch(
+  () => props.defaultFilters,
+  (newFilters) => (filters.value = newFilters)
+);
+
+function filterRows(filters: VFilter | string, rows: any[]): any[] {
+  if (typeof filters === 'string' && filters) {
+    // global filter
+    return rows.filter((row) => {
+      return Object.values(row).some((value) => {
+        return String(value).toLowerCase().includes(filters.toLowerCase());
+      });
+    });
+  }
+
+  // no filters, return original rows
+  if (!Object.keys(filters).length) return props.rows;
+
+  return rows.filter((row) => {
+    return Object.keys(filters).every((field) => {
+      if (!filters[field]) {
+        delete filters[field];
+        return true;
+      }
+      return row[field] ? row[field].toLowerCase().includes(filters[field].toLowerCase()) : false;
+    });
+  });
+}
+
+function processRows(rows: any[]) {
+  return sortRows(sorters.value, rows);
+}
+watch(
+  () => props.rows,
+  (newRows) => (rows.value = newRows)
+);
+
 const colWidths = computed(() => {
   let width = 0;
   processedColumns.value.map((col: any) => (width += col.width || 150));
-  console.log(width);
   return width;
 });
 
-const tbodyHeight = computed(() => props.rows.length * props.rowHeight);
-
-const tbodyVscrollStyle = { width: '15px', maxWidth: '15px', minWidth: '15px' };
-const tbodyHscrollStyle = {
-  height: '15px',
-  maxHeight: '15px',
-  minHeight: '15px',
-};
-
-const theadContainerStyle = computed(() => {
-  return {
-    width: `${colWidths.value}px`,
-    transform: `translateX(${-scrollLeft.value}px)`,
-  };
-});
-
-const theadTrStyle = computed(() => {
-  return {
-    top: '0px',
-    height: `${props.rowHeight}px`,
-    width: `${colWidths.value}px`,
-  };
-});
-
 const scrollLeft = ref(0);
-watch(scrollLeft, (newVal, oldVal) => {
-  return;
-});
-
-const scrollTop = ref(0);
-watch(scrollLeft, (newVal, oldVal) => {
-  return;
-});
-
-const startNode = computed(() => getStartNode(scrollTop.value));
-const visibleNodesCount = computed(() =>
-  getVisibleNodesCount(startNode.value, props.rows.length)
-);
-const offsetY = computed(() => startNode.value * props.rowHeight);
-
-function getStartNode(scrollTop: number): number {
-  let tmpStart =
-    Math.floor(scrollTop / props.rowHeight) - props.virtualScrollNodePadding;
-  return Math.max(0, tmpStart);
-}
-
-function getVisibleNodesCount(startNode: number, rowCount: number): number {
-  const count =
-    Math.ceil(props.rootHeight / props.rowHeight) +
-    2 * props.virtualScrollNodePadding;
-  return Math.min(rowCount - startNode, count);
-}
-
-const visibleRows = computed<any[]>(() =>
-  props.rows.slice(startNode.value, startNode.value + visibleNodesCount.value)
-);
-
-const tbodyStyle = computed(() => {
-  return { height: `${tbodyHeight.value}px` };
-});
-const tbodyContainerStyle = computed(() => {
-  return {
-    width: `${colWidths.value}px`,
-    transform: `translateY(${offsetY.value}px)`,
-  };
-});
-const tbodyViewportStyle = computed(() => {
-  return { width: 'calc(100% + 15px)' };
-});
-
-const onVScroll = (event: UIEvent) => {
-  const target = event.target as HTMLElement;
-  const top = target.scrollTop;
-  scrollTop.value = top;
-  tbodyScrollRef.value.scrollTop = top;
-  vscrollRef.value.scrollTop = top;
-};
-
-const onHScroll = (event: UIEvent) => {
-  const target = event.target as HTMLElement;
-  const left = target.scrollLeft;
-  hscrollRef.value.scrollLeft = left;
-  tbodyScrollRef.value.scrollLeft = left;
-  scrollLeft.value = left;
-};
-
-function handleVScrollEvent(e: MouseEvent, attach: boolean) {
-  if (attach) {
-    tbodyScrollRef.value?.removeEventListener('scroll', onVScroll);
-    e.target?.addEventListener('scroll', onVScroll);
-  } else {
-    e.target?.removeEventListener('scroll', onVScroll);
-    tbodyScrollRef.value?.addEventListener('scroll', onVScroll);
-  }
-}
-
-function handleHScrollEvent(e: MouseEvent, attach: boolean) {
-  if (attach) e.target?.addEventListener('scroll', onHScroll);
-  else e.target?.removeEventListener('scroll', onHScroll);
-}
 
 const dropColIndicatorDown = ref<HTMLElement | undefined>();
 const dropColIndicatorUp = ref<HTMLElement | undefined>();
-
-onMounted(() => tbodyScrollRef.value?.addEventListener('scroll', onVScroll));
 
 const resizingCol = ref(false);
 let curColEl: HTMLElement | null = null;
@@ -275,7 +246,6 @@ let x = 0;
 let diffX = 0;
 
 function onColResizeStart(e: MouseEvent, col: VColumn) {
-  if (!tbodyScrollRef.value || resizingCol.value) return;
   e.preventDefault();
 
   resizingCol.value = true;
@@ -288,31 +258,28 @@ function onColResizeStart(e: MouseEvent, col: VColumn) {
 }
 
 const onColResizeMove = (e: MouseEvent) => {
-  if (!(tbodyScrollRef.value && resizerRef.value)) return;
+  if (!(rootRef.value && resizerRef.value)) return;
   e.preventDefault();
-
   diffX = e.clientX - x;
 
   resizerRef.value.setAttribute(
     'style',
-    `top: ${tbodyScrollRef.value.offsetTop}px; height: ${tbodyScrollRef.value.clientHeight}px; left: ${e.pageX}px; display:block;`
+    ` height: ${rootRef.value.clientHeight}px; left: ${e.pageX}px; display:block;`
   );
 };
 
 const onColResizeEnd = () => {
-  if (!(curColResizing && resizerRef.value && curColEl)) return;
+  if (!(curColResizing && resizerRef.value && curColEl && rootRef.value)) return;
 
   resizingCol.value = false;
-
-  const colIdx = getColIdx(curColResizing.field);
+  const colIdx = getColIdx(curColResizing.name);
 
   if (colIdx > -1) {
+    const maxScrollWidth = colWidths.value - rootRef.value.clientWidth;
+    if (diffX < 0 && scrollLeft.value >= maxScrollWidth) {
+      scrollLeft.value = Math.max(0, scrollLeft.value + diffX);
+    }
     processedColumns.value[colIdx].width = curColEl.offsetWidth + diffX;
-    console.log(diffX);
-    // need to check min and set to 0 if < 0
-    scrollLeft.value += diffX;
-    hscrollRef.value.scrollLeft += diffX;
-    tbodyScrollRef.value.scrollLeft += diffX;
   }
 
   resizerRef.value.style.display = 'none';
@@ -321,13 +288,108 @@ const onColResizeEnd = () => {
   document.removeEventListener('mouseup', onColResizeEnd);
 };
 
-const getColIdx = (field: string): number =>
-  processedColumns.value.findIndex((col) => col.field === field);
+function onColDragStart(e: DragEvent) {
+  const sourceCol = e.target as HTMLElement;
+  sourceCol.style.opacity = '0.4';
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text', sourceCol.getAttribute('name') as string);
+  }
+}
+
+function onColDrop(e: DragEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const targetCol = getClosestColEl(e.target as HTMLElement);
+  if (!targetCol) return;
+
+  const data = e.dataTransfer?.getData('text');
+  const [srcField] = data?.split('~~');
+  const destField = targetCol.getAttribute('name');
+
+  if (!(srcField && destField)) return;
+
+  if (srcField !== destField) {
+    const srcColIdx = getColIdx(srcField);
+    const sourceCol = processedColumns.value.splice(srcColIdx, 1);
+    const destColIdx = getColIdx(destField);
+    const colCenter = targetCol.offsetLeft + targetCol.offsetWidth / 2;
+
+    if (colCenter < e.clientX) {
+      // move after
+      processedColumns.value.splice(destColIdx + 1, 0, sourceCol[0]);
+    } else {
+      // move before
+      processedColumns.value.splice(destColIdx, 0, sourceCol[0]);
+    }
+  }
+
+  return;
+}
+
+function onColDragEnd(e: DragEvent) {
+  if (!(dropColIndicatorDown.value && dropColIndicatorUp.value)) return;
+  (e.target as HTMLElement).style.opacity = '1';
+
+  dropColIndicatorDown.value.style.display = 'none';
+  dropColIndicatorUp.value.style.display = 'none';
+}
+
+function onColDragOver(e: DragEvent) {
+  // fires off the element being hovered over
+  e.preventDefault(); // allows dropping
+
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+
+  if (!(dropColIndicatorDown.value && dropColIndicatorUp.value)) return;
+
+  const targetCol = getClosestColEl(e.target as HTMLElement);
+  if (!targetCol) return;
+
+  const { top, left } = getOffset(targetCol);
+  const colWidth = targetCol.offsetWidth;
+  const colCenter = left + colWidth / 2;
+  const colHeight = targetCol.clientHeight;
+  const iconHeight = dropColIndicatorDown.value.clientHeight / 2;
+  const iconWidth = dropColIndicatorDown.value.clientWidth / 2;
+  const iconLeftLocation = left - iconWidth + 'px';
+  const iconRightLocation = left + colWidth - iconWidth + 'px';
+  const iconDownTop = top - iconHeight;
+  const iconUpTop = top + colHeight - iconHeight;
+
+  if (colCenter < e.clientX) {
+    // place indicators to right of targetCol
+    dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconRightLocation}`);
+    dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconRightLocation}`);
+  } else {
+    // place indicators to left of targetCol
+    dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconLeftLocation}`);
+    dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconLeftLocation}`);
+  }
+
+  dropColIndicatorDown.value.style.display = 'block';
+  dropColIndicatorUp.value.style.display = 'block';
+  return;
+}
+
+const getColIdx = (name: string): number => processedColumns.value.findIndex((col) => col.name === name);
+
+const getClosestColEl = (target: HTMLElement): HTMLElement | null => target.closest('.vdt--th');
+
+function getOffset(target: HTMLElement): { top: number; left: number } {
+  return { top: target.offsetTop, left: target.offsetLeft };
+}
 </script>
 
 <style>
-.vdt--root-wrapper {
+.vdt--clickable {
+  cursor: pointer;
+}
+.vdt--table-border {
   border: 1px solid rgba(255, 255, 255, 0.8);
+}
+.vdt--root-wrapper {
   height: 100%;
   position: relative;
   display: flex;
@@ -338,6 +400,7 @@ const getColIdx = (field: string): number =>
   width: 1px;
   position: absolute;
   z-index: 10;
+  top: 0px;
   display: none;
   border: 1px solid var(--q-accent);
 }
@@ -358,7 +421,6 @@ const getColIdx = (field: string): number =>
   flex-direction: row;
 }
 .vdt--root {
-  border: rgba(255, 255, 255, 0.8);
   height: 100%;
   overflow: hidden;
   flex: 1 1 auto;
@@ -370,7 +432,6 @@ const getColIdx = (field: string): number =>
 .vdt--thead-wrapper {
   flex-direction: row;
   background-color: var(--q-dark);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
   display: flex;
   width: 100%;
   white-space: nowrap;
@@ -391,8 +452,25 @@ const getColIdx = (field: string): number =>
 }
 .vdt--thead-tr {
   font-weight: 700;
-  position: absolute;
   overflow: hidden;
+}
+.vdt--thead-filters {
+  overflow: hidden;
+}
+.vdt--row-highlight .vdt--row:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+.vdt--striped-rows .vdt--row-odd {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.vdt--cell-borders .vdt--th,
+.vdt--cell-borders .vdt--cell,
+.vdt--cell-borders .vdt--row > * {
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
+}
+.vdt--row-borders .vdt--row,
+.vdt--thead-wrapper {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
 }
 .vdt--th {
   position: relative;
@@ -400,7 +478,9 @@ const getColIdx = (field: string): number =>
   align-items: center;
   height: 100%;
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.6);
+}
+.vdt--th-filter {
+  padding: 5px;
 }
 .vdt--th-resizer {
   display: block;
@@ -424,7 +504,6 @@ const getColIdx = (field: string): number =>
 .vdt--th-label-container {
   display: flex;
   justify-content: space-between;
-  flex-direction: row-reverse;
   align-items: center;
   height: 100%;
   width: 100%;
@@ -437,7 +516,6 @@ const getColIdx = (field: string): number =>
   overflow: hidden;
   align-items: center;
   text-overflow: ellipsis;
-  align-self: stretch;
 }
 .vdt--th-label-text {
   overflow: hidden;
@@ -474,18 +552,16 @@ const getColIdx = (field: string): number =>
   transition: background-color 0.1s;
   white-space: nowrap;
   width: 100%;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
 }
-.vdt--cell {
+.vdt--cell,
+.vdt--row > * {
   overflow: hidden;
   text-overflow: ellipsis;
   display: inline-block;
   white-space: nowrap;
   height: 100%;
-  border-right: 1px solid rgba(255, 255, 255, 0.6);
   padding: 5px;
 }
-/*.vdt--tbody-vscroll,*/
 .vdt--tbody-hscroll {
   height: 100%;
   min-height: 0;
