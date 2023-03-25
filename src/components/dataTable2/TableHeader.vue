@@ -37,7 +37,13 @@
           aria-rowindex="2"
           :style="{ ...theadTrStyle, top: `${rowHeight}px` }"
         >
-          <filter-cell v-for="(col, colIdx) in columns" :key="colIdx" :col="col" :filter="filters[col.name] || ''" />
+          <filter-cell
+            v-for="(col, colIdx) in columns"
+            :key="colIdx"
+            :col="col"
+            :filter="filters[col.name] || ''"
+            @update:model-value="(val) => $emit('updateFilter', col.name, val)"
+          />
         </div>
       </div>
     </div>
@@ -63,6 +69,7 @@ const props = defineProps<{
 
 defineEmits<{
   (e: 'updateSorter', event: MouseEvent, field: string): void;
+  (e: 'updateFilter', field: string, val: string | null): void;
   (e: 'onResizeStart', event: MouseEvent, col: VColumn): void;
   (e: 'onDragStart', event: DragEvent): void;
   (e: 'onDragEnd', event: DragEvent): void;

@@ -5,10 +5,30 @@
     role="presentation"
     :style="{ height: `${rootHeight}px` }"
   >
+    <div v-if="loading" class="vdt-loading">
+      <slot name="loading">{{ loadingText }}</slot>
+    </div>
+
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer" />
     <div v-if="reorderableColumns" class="vdt--column-drop-wrapper" role="presentation">
       <div ref="dropColIndicatorDown" class="mdi mdi-arrow-down-bold vdt--drop-indicator" />
       <div ref="dropColIndicatorUp" class="mdi mdi-arrow-up-bold vdt--drop-indicator" />
+    </div>
+
+    <div v-if="globalFilter" class="vdt-global-filter">
+      <slot
+        name="globalFilterInput"
+        :filter-value="globalFilterValue"
+        :update-filter="(val: any) => globalFilterValue = val"
+      >
+        <q-input v-model="globalFilterValue" style="width: 200px" class="vdt-global-filter-input" dense outlined />
+      </slot>
+    </div>
+
+    <div v-if="$slots.top || title" class="vdt-top">
+      <slot name="top">
+        <span v-if="title" class="vdt-top--title">{{ title }}</span>
+      </slot>
     </div>
 
     <div class="vdt--root-wrapper-body" role="presentation">
@@ -30,6 +50,7 @@
           :sorters="sorters"
           :filters="filters"
           @update-sorter="updateSorters"
+          @update-filter="(field, val) => (filters[field] = String(val))"
           @on-resize-start="onColResizeStart"
           @on-drag-start="onColDragStart"
           @on-drag-end="onColDragEnd"
@@ -42,8 +63,8 @@
         </table-header>
 
         <virtual-scroller
-          v-slot="{ processedRows, startNode }"
-          :rows="rows"
+          v-slot="{ virtualRows, startNode }"
+          :rows="processedRows"
           :columns="processedColumns"
           :root-height="rootHeight"
           :virtual-scroll-node-padding="virtualScrollNodePadding"
@@ -53,7 +74,8 @@
           :striped-rows="stripedRows"
         >
           <table-body
-            :rows="processedRows"
+            v-if="virtualRows.length"
+            :rows="virtualRows"
             :columns="processedColumns"
             :row-height="rowHeight"
             :col-widths="colWidths"
@@ -63,24 +85,53 @@
               <slot v-if="String(slotName).startsWith('body')" :name="slotName" v-bind="slotProps || {}" />
             </template>
           </table-body>
+
+          <div v-else class="vdt-no-data">
+            <slot name="noData">{{ noDataText }}</slot>
+          </div>
         </virtual-scroller>
 
         <!-- fake horizontal scroll -->
-        <fake-horizontal-scroll :col-widths="colWidths" @update-scroll="(val) => (scrollLeft = val)" />
+        <fake-horizontal-scroll
+          :col-widths="colWidths"
+          :client-width="rootRef?.clientWidth || 0"
+          @update-scroll="(val) => (scrollLeft = val)"
+        />
       </div>
+    </div>
+
+    <div v-if="$slots.bottom" class="vdt-bottom">
+      <slot name="bottom">
+        <!-- <div v-if="selectedRowsCount">{{ selectedRowsCount }} selected</div> -->
+      </slot>
+
+      <div class="vdt-bottom-spacer" />
+
+      <!-- <div class="vdt-pagination">
+        <slot name="pagination">
+          <table-paginator
+            v-if="pagination"
+            :current-page="currentPage"
+            :total-page-num="processedRows.length"
+            :rows-per-page="pagination"
+            :total-row-count="totalRowCount"
+            @update-page="(newPage) => (currentPage = newPage)"
+          />
+        </slot>
+      </div> -->
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, toRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { VColumn, VFilter, VSorter } from '../DataTable/types';
 import TableHeader from './TableHeader.vue';
 import FakeHorizontalScroll from './FakeHorizontalScroll.vue';
 import VirtualScroller from './VirtualScroller.vue';
 import TableBody from './TableBody.vue';
-import { findSorterIndex } from '../utils';
-import { useSorter } from 'src/composables/useSorter';
+import useSorter from 'src/composables/useSorter';
+import useFilter from 'src/composables/useFilter';
 
 interface Props {
   columns: VColumn[];
@@ -94,8 +145,13 @@ interface Props {
   reorderableColumns?: boolean;
   hightlightOnHover?: boolean;
   stripedRows?: boolean;
+  globalFilter?: boolean;
   defaultFilters?: VFilter;
   defaultSorters?: VSorter[];
+  loading?: boolean;
+  loadingText?: string;
+  title?: string;
+  noDataText?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -108,6 +164,11 @@ const props = withDefaults(defineProps<Props>(), {
   reorderableColumns: false,
   hightlightOnHover: false,
   stripedRows: false,
+  globalFilter: false,
+  loading: false,
+  loadingText: 'Loading...',
+  title: '',
+  noDataText: 'No data found',
   defaultFilters: () => {
     return {};
   },
@@ -141,91 +202,50 @@ function processColumns(columns: VColumn[]) {
   return columns;
 }
 
-const { sortRows } = useSorter();
-const sorters = ref(props.defaultSorters);
-
-const rows = ref(processRows(props.rows));
-watch(
-  () => props.defaultSorters,
-  (newSorters) => {
-    sorters.value = newSorters;
-    rows.value = sortRows(newSorters, rows.value);
-  }
-);
-
-function updateSorters(e: MouseEvent, field: string): void {
-  const sorterIdx = findSorterIndex(sorters.value, field);
-  if (e.ctrlKey) {
-    // multi-sort key
-    if (sorterIdx === -1) {
-      // sorter doesn't exist, add to end
-      sorters.value.push({ field: field, dir: 'asc' });
-    } else {
-      // check direction
-      if (sorters.value[sorterIdx]['dir'] === 'asc') {
-        // swap to des
-        sorters.value[sorterIdx]['dir'] = 'desc';
-      } else {
-        // remove sorter
-        sorters.value.splice(sorterIdx, 1);
-      }
-    }
-  } else {
-    if (sorterIdx === -1) {
-      // replace sorters
-      sorters.value = [{ field: field, dir: 'asc' }];
-    } else {
-      // sorter exists
-      if (sorters.value[sorterIdx]['dir'] === 'asc') {
-        // swap to des
-        sorters.value = [{ field: field, dir: 'desc' }];
-      } else {
-        // remove sorter
-        sorters.value = [];
-      }
-    }
-  }
-
-  rows.value = sortRows(sorters.value, props.rows);
+const globalFilterValue = ref('');
+function filterGlobally(filter: string, rows: any[]): any[] {
+  if (!filter) return props.rows;
+  return handleGlobalFilter(filter, rows);
 }
 
-const filters = ref(props.defaultFilters);
+const filters = ref<VFilter>(props.defaultFilters);
 watch(
   () => props.defaultFilters,
   (newFilters) => (filters.value = newFilters)
 );
 
-function filterRows(filters: VFilter | string, rows: any[]): any[] {
-  if (typeof filters === 'string' && filters) {
-    // global filter
-    return rows.filter((row) => {
-      return Object.values(row).some((value) => {
-        return String(value).toLowerCase().includes(filters.toLowerCase());
-      });
-    });
+const sorters = ref<VSorter[]>(props.defaultSorters);
+watch(
+  () => props.defaultSorters,
+  (newSorters) => (sorters.value = newSorters)
+);
+
+const { sortRows, handleSortUpdate } = useSorter();
+
+const processedRows = computed(() => {
+  let rows = props.rows;
+  rows = sortRows(sorters.value, rows);
+
+  if (props.globalFilter) {
+    rows = filterGlobally(globalFilterValue.value, rows);
+  } else {
+    rows = filterRows(filters.value, rows);
   }
 
+  return rows;
+});
+
+function updateSorters(e: MouseEvent, field: string): void {
+  sorters.value = handleSortUpdate(e.ctrlKey, field, sorters.value);
+}
+
+const { handleFilterRows, handleGlobalFilter } = useFilter();
+
+function filterRows(filters: VFilter, rows: any[]): any[] {
   // no filters, return original rows
   if (!Object.keys(filters).length) return props.rows;
-
-  return rows.filter((row) => {
-    return Object.keys(filters).every((field) => {
-      if (!filters[field]) {
-        delete filters[field];
-        return true;
-      }
-      return row[field] ? row[field].toLowerCase().includes(filters[field].toLowerCase()) : false;
-    });
-  });
+  return handleFilterRows(filters, rows);
 }
-
-function processRows(rows: any[]) {
-  return sortRows(sorters.value, rows);
-}
-watch(
-  () => props.rows,
-  (newRows) => (rows.value = newRows)
-);
 
 const colWidths = computed(() => {
   let width = 0;
@@ -373,9 +393,9 @@ function onColDragOver(e: DragEvent) {
   return;
 }
 
-const getColIdx = (name: string): number => processedColumns.value.findIndex((col) => col.name === name);
-
 const getClosestColEl = (target: HTMLElement): HTMLElement | null => target.closest('.vdt--th');
+
+const getColIdx = (name: string): number => processedColumns.value.findIndex((col) => col.name === name);
 
 function getOffset(target: HTMLElement): { top: number; left: number } {
   return { top: target.offsetTop, left: target.offsetLeft };
@@ -383,6 +403,19 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 </script>
 
 <style>
+.vdt-loading {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+.vdt-global-filter-input {
+  padding: 5px;
+}
 .vdt--clickable {
   cursor: pointer;
 }
@@ -412,6 +445,13 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   display: none;
   font-size: 2rem;
   z-index: 100;
+}
+.vdt-top {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 10px 10px 5px 10px;
+}
+.vdt-top--title {
+  font-size: 1.5em;
 }
 .vdt--root-wrapper-body {
   flex: 1 1 auto;
@@ -562,6 +602,9 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   height: 100%;
   padding: 5px;
 }
+.vdt--row-expanded {
+  padding-left: 60px;
+}
 .vdt--tbody-hscroll {
   height: 100%;
   min-height: 0;
@@ -601,5 +644,16 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
 .vdt--tbody-hscroll-container {
   height: 100%;
   position: relative;
+}
+.vdt-no-data {
+  padding: 10px;
+}
+.vdt-bottom {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 5px 10px 10px 10px;
+  display: flex;
+}
+.vdt-bottom-spacer {
+  flex-grow: 1;
 }
 </style>

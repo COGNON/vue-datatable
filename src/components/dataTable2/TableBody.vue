@@ -5,7 +5,8 @@
     :row="row"
     :row-index="rowIdx + (virtualStartIsOdd ? 1 : 0)"
     :columns="columns"
-    :style="{ height: `${rowHeight}px`, width: `${colWidths}px` }"
+    :row-height="rowHeight"
+    :style="{ width: `${colWidths}px` }"
   >
     <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
       <slot v-if="String(slotName).startsWith('body')" :name="slotName" v-bind="slotProps || {}" />

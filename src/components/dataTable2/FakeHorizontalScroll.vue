@@ -1,5 +1,5 @@
 <template>
-  <div class="vdt--tbody-hscroll" aria-hidden="true" :style="scrollStyle">
+  <div class="vdt--tbody-hscroll" aria-hidden="true" :style="{ ...scrollStyle, display: showScrollbar }">
     <div class="vdt--tbody-hscroll-lspacer" :style="lSpacerStyle" />
     <div
       class="vdt--tbody-hscroll-viewport"
@@ -7,16 +7,27 @@
       @mousedown="(e) => handleHScrollEvent(e, true)"
       @mouseup="(e) => handleHScrollEvent(e, false)"
     >
-      <div
-        class="vdt--tbody-hscroll-container"
-        :style="{ ...scrollStyle, width: `${colWidths}px` }"
-      />
+      <div class="vdt--tbody-hscroll-container" :style="{ ...scrollStyle, width: `${colWidths}px` }" />
     </div>
     <div class="vdt--tbody-hscroll-rspacer" :style="rSpacerStyle" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
+const props = defineProps<{ colWidths: number; clientWidth: number }>();
+const emit = defineEmits<{ (e: 'updateScroll', val: number): void }>();
+
+const onHScroll = (event: Event) => emit('updateScroll', (event.target as HTMLElement).scrollLeft);
+
+function handleHScrollEvent(e: MouseEvent, attach: boolean) {
+  if (attach) e.target?.addEventListener('scroll', onHScroll);
+  else e.target?.removeEventListener('scroll', onHScroll);
+}
+
+const showScrollbar = computed(() => (props.colWidths > props.clientWidth - 15 ? 'flex' : 'none'));
+
 const rSpacerStyle = { width: '15px', maxWidth: '15px', minWidth: '15px' };
 const lSpacerStyle = { width: '0px', maxWidth: '0px', minWidth: '0px' };
 const scrollStyle = {
@@ -24,15 +35,4 @@ const scrollStyle = {
   maxHeight: '15px',
   minHeight: '15px',
 };
-
-defineProps<{ colWidths: number }>();
-const emit = defineEmits<{ (e: 'updateScroll', val: number): void }>();
-
-const onHScroll = (event: Event) =>
-  emit('updateScroll', (event.target as HTMLElement).scrollLeft);
-
-function handleHScrollEvent(e: MouseEvent, attach: boolean) {
-  if (attach) e.target?.addEventListener('scroll', onHScroll);
-  else e.target?.removeEventListener('scroll', onHScroll);
-}
 </script>

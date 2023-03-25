@@ -13,6 +13,7 @@
       borders="both"
       bordered
     >
+      <template #body-expanded="{ row }">{{ row }}</template>
     </DataTable>
   </div>
 </template>
@@ -79,7 +80,7 @@ const columns1: VColumn[] = [
     name: 'greeting',
     field: 'greeting',
     header: 'Greeting',
-    width: 300,
+    width: 400,
   },
   {
     name: 'registered',

@@ -3,7 +3,7 @@
     <div class="vdt--tbody-clipper" role="presentation">
       <div ref="tbodyScrollRef" class="vdt--tbody-viewport" role="presentation" :style="tbodyViewportStyle">
         <div class="vdt--tbody-container" role="rowgroup" :style="tbodyContainerStyle">
-          <slot :processed-rows="visibleRows" :start-node="startNode" />
+          <slot :virtual-rows="visibleRows" :start-node="startNode" />
         </div>
       </div>
     </div>

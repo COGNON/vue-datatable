@@ -1,6 +1,7 @@
 import { VSorter } from 'src/components/DataTable/types';
+import { findSorterIndex } from 'src/components/utils';
 
-export function useSorter() {
+export default function useSorter() {
   const sortRows = (sorters: VSorter[], rows: any[]): any[] => {
     if (!sorters.length) return rows;
 
@@ -35,5 +36,40 @@ export function useSorter() {
     };
   };
 
-  return { sortRows };
+  const handleSortUpdate = (multi: boolean, field: string, sorters: VSorter[]) => {
+    const sorterIdx = findSorterIndex(sorters, field);
+    if (multi) {
+      if (sorterIdx === -1) {
+        // sorter doesn't exist, add to end
+        sorters.push({ field: field, dir: 'asc' });
+      } else {
+        // check direction
+        if (sorters[sorterIdx]['dir'] === 'asc') {
+          // swap to des
+          sorters[sorterIdx]['dir'] = 'desc';
+        } else {
+          // remove sorter
+          sorters.splice(sorterIdx, 1);
+        }
+      }
+    } else {
+      if (sorterIdx === -1) {
+        // replace sorters
+        sorters = [{ field: field, dir: 'asc' }];
+      } else {
+        // sorter exists
+        if (sorters[sorterIdx]['dir'] === 'asc') {
+          // swap to des
+          sorters = [{ field: field, dir: 'desc' }];
+        } else {
+          // remove sorter
+          sorters = [];
+        }
+      }
+    }
+
+    return sorters;
+  };
+
+  return { sortRows, handleSortUpdate };
 }
