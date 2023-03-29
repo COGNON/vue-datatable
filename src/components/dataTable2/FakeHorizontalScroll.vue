@@ -15,16 +15,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import useHorizontalScroll from 'src/composables/useHorizontalScroll';
 
 const props = defineProps<{ colWidths: number; clientWidth: number }>();
 const emit = defineEmits<{ (e: 'updateScroll', val: number): void }>();
-
-const onHScroll = (event: Event) => emit('updateScroll', (event.target as HTMLElement).scrollLeft);
-
-function handleHScrollEvent(e: MouseEvent, attach: boolean) {
-  if (attach) e.target?.addEventListener('scroll', onHScroll);
-  else e.target?.removeEventListener('scroll', onHScroll);
-}
+const { handleHScrollEvent } = useHorizontalScroll(emit);
 
 const showScrollbar = computed(() => (props.colWidths > props.clientWidth - 15 ? 'flex' : 'none'));
 

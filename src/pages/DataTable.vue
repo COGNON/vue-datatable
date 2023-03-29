@@ -13,7 +13,6 @@
       borders="both"
       bordered
     >
-      <template #body-expanded="{ row }">{{ row }}</template>
     </DataTable>
   </div>
 </template>

@@ -6,10 +6,7 @@
     @mousedown="(e) => $emit('handleScroll', e, true)"
     @mouseup="(e) => $emit('handleScroll', e, false)"
   >
-    <div
-      class="vdt--tbody-vscroll-container"
-      :style="{ ...scrollStyle, height: `${tbodyHeight}px` }"
-    />
+    <div class="vdt--tbody-vscroll-container" :style="{ ...scrollStyle, height: `${tbodyHeight}px` }" />
   </div>
 </template>
 

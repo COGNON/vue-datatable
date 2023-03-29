@@ -50,11 +50,7 @@
         </template>
 
         <template v-if="filterHeader" #filter="colProps">
-          <q-input
-            v-model="filters[colProps.col.field]"
-            class="vdt-hdr-filter"
-            v-bind="filterComponentProps"
-          />
+          <q-input v-model="filters[colProps.col.field]" class="vdt-hdr-filter" v-bind="filterComponentProps" />
         </template>
       </table-header>
 
@@ -81,7 +77,7 @@
 
     <virtual-scroller
       v-else
-      ref="tableRef"
+      ref="rootRef"
       class="vdt-table"
       role="table"
       :rows="processedRows"
@@ -114,11 +110,7 @@
           </template>
 
           <template v-if="filterHeader" #filter="colProps">
-            <q-input
-              v-model="filters[colProps.col.field]"
-              class="vdt-hdr-filter"
-              v-bind="filterComponentProps"
-            />
+            <q-input v-model="filters[colProps.col.field]" class="vdt-hdr-filter" v-bind="filterComponentProps" />
           </template>
         </table-header>
       </template>
@@ -150,10 +142,7 @@
       </template>
     </virtual-scroller>
 
-    <div
-      v-if="$slots.bottom || selectedRowsCount || pagination"
-      class="vdt-bottom"
-    >
+    <div v-if="$slots.bottom || selectedRowsCount || pagination" class="vdt-bottom">
       <slot name="bottom">
         <div v-if="selectedRowsCount">{{ selectedRowsCount }} selected</div>
       </slot>
@@ -176,28 +165,14 @@
 
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
     <template v-if="reorderableColumns">
-      <div
-        ref="dropColIndicatorDown"
-        class="mdi mdi-arrow-down-bold vdt--drop-indicator"
-      />
-      <div
-        ref="dropColIndicatorUp"
-        class="mdi mdi-arrow-up-bold vdt--drop-indicator"
-      />
+      <div ref="dropColIndicatorDown" class="mdi mdi-arrow-down-bold vdt--drop-indicator" />
+      <div ref="dropColIndicatorUp" class="mdi mdi-arrow-up-bold vdt--drop-indicator" />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  VColumn,
-  VFilter,
-  CellSeparators,
-  VSorter,
-  SelectionModes,
-  SelectedRow,
-  CellWrap,
-} from './types';
+import { VColumn, VFilter, CellSeparators, VSorter, SelectionModes, SelectedRow, CellWrap } from './types';
 import { computed, ref, watch } from 'vue';
 import TableHeader from './TableHeader.vue';
 import TableBody from './TableBody.vue';
@@ -205,9 +180,16 @@ import VirtualScroller from './VirtualScroller.vue';
 import FilterComponent from './FilterComponent.vue';
 import { QInputProps } from 'quasar';
 import TablePaginator from './TablePaginator.vue';
+import useColResize from 'src/composables/useColResize';
 
-const tableRef = ref<HTMLElement | undefined>();
-const resizerRef = ref<HTMLElement | undefined>();
+const { onColResizeStart, resizerRef, rootRef, updatedCol } = useColResize();
+watch(updatedCol, (col) => {
+  if (col) {
+    const colIdx = getColIdx(col.name);
+    if (colIdx !== -1) columns.value[colIdx] = col;
+  }
+});
+
 const dropColIndicatorDown = ref<HTMLElement | undefined>();
 const dropColIndicatorUp = ref<HTMLElement | undefined>();
 
@@ -311,9 +293,7 @@ function filterRows(filters: VFilter | string, rows: any[]): any[] {
         delete filters[field];
         return true;
       }
-      return row[field]
-        ? row[field].toLowerCase().includes(filters[field].toLowerCase())
-        : false;
+      return row[field] ? row[field].toLowerCase().includes(filters[field].toLowerCase()) : false;
     });
   });
 }
@@ -356,24 +336,13 @@ function onRowSelect(rowIdx: number, selected: boolean) {
   }
 }
 
-const selectedRowsCount = computed(
-  () => Object.keys(selectedRows.value).length
-);
-const rowSeparatorCls = computed<string>(() =>
-  props.separators.match(/row|cell/) ? 'vdt-row--separators' : ''
-);
-const colSeparatorCls = computed<string>(() =>
-  props.separators.match(/column|cell/) ? 'vdt-col--separators' : ''
-);
+const selectedRowsCount = computed(() => Object.keys(selectedRows.value).length);
+const rowSeparatorCls = computed<string>(() => (props.separators.match(/row|cell/) ? 'vdt-row--separators' : ''));
+const colSeparatorCls = computed<string>(() => (props.separators.match(/column|cell/) ? 'vdt-col--separators' : ''));
 
-watch(
-  filters,
-  (newFilters) =>
-    (processedRows.value = processRows(filterRows(newFilters, props.rows))),
-  {
-    deep: true,
-  }
-);
+watch(filters, (newFilters) => (processedRows.value = processRows(filterRows(newFilters, props.rows))), {
+  deep: true,
+});
 
 const globalFilter = ref();
 watch(globalFilter, (newFilter) => {
@@ -381,13 +350,9 @@ watch(globalFilter, (newFilter) => {
   processedRows.value = processRows(filterRows(newFilter, props.rows));
 });
 
-watch(
-  sorters,
-  () => (processedRows.value = processRows(sortRows(processedRows.value))),
-  {
-    deep: true,
-  }
-);
+watch(sorters, () => (processedRows.value = processRows(sortRows(processedRows.value))), {
+  deep: true,
+});
 
 function updateSorters(e: MouseEvent, field: string): void {
   if (e.ctrlKey) {
@@ -442,9 +407,7 @@ function sortRows(rows: any[]): any[] {
   // descending fields are prepended with a '-'
   const fields = Object.values(sorters.value)
     .sort((a, b) => a.num - b.num)
-    .map((sorter) =>
-      sorter.dir === 'des' ? `-${sorter.field}` : sorter.field
-    );
+    .map((sorter) => (sorter.dir === 'des' ? `-${sorter.field}` : sorter.field));
 
   return rows.sort(multiSort(fields));
 }
@@ -489,54 +452,54 @@ function processRows(rows: any[]): any[] {
   return pageRows(sortRows(filterRows(filters.value, rows)));
 }
 
-const resizingCol = ref(false);
-let curColEl: HTMLElement | null = null;
-let curColResizing: VColumn | null = null;
+// const resizingCol = ref(false);
+// let curColEl: HTMLElement | null = null;
+// let curColResizing: VColumn | null = null;
 
-let x = 0;
-let diffX = 0;
+// let x = 0;
+// let diffX = 0;
 
-function onColResizeStart(e: MouseEvent, col: VColumn) {
-  if (!tableRef.value || resizingCol.value) return;
-  e.preventDefault();
+// function onColResizeStart(e: MouseEvent, col: VColumn) {
+//   if (!rootRef.value || resizingCol.value) return;
+//   e.preventDefault();
 
-  resizingCol.value = true;
-  x = e.clientX;
-  curColResizing = col;
-  curColEl = (e.target as HTMLElement).parentElement;
+//   resizingCol.value = true;
+//   x = e.clientX;
+//   curColResizing = col;
+//   curColEl = (e.target as HTMLElement).parentElement;
 
-  document.addEventListener('mousemove', onColResizeMove);
-  document.addEventListener('mouseup', onColResizeEnd);
-}
+//   document.addEventListener('mousemove', onColResizeMove);
+//   document.addEventListener('mouseup', onColResizeEnd);
+// }
 
-const onColResizeMove = (e: MouseEvent) => {
-  if (!(tableRef.value && resizerRef.value)) return;
-  e.preventDefault();
+// const onColResizeMove = (e: MouseEvent) => {
+//   if (!(rootRef.value && resizerRef.value)) return;
+//   e.preventDefault();
 
-  diffX = e.clientX - x;
+//   diffX = e.clientX - x;
 
-  resizerRef.value.setAttribute(
-    'style',
-    `top: ${tableRef.value.offsetTop}px; height: ${tableRef.value.clientHeight}px; left: ${e.pageX}px; display:block;`
-  );
-};
+//   resizerRef.value.setAttribute(
+//     'style',
+//     `top: ${rootRef.value.offsetTop}px; height: ${rootRef.value.clientHeight}px; left: ${e.pageX}px; display:block;`
+//   );
+// };
 
-const onColResizeEnd = () => {
-  if (!(curColResizing && resizerRef.value && curColEl)) return;
+// const onColResizeEnd = () => {
+//   if (!(curColResizing && resizerRef.value && curColEl)) return;
 
-  resizingCol.value = false;
+//   resizingCol.value = false;
 
-  const colIdx = getColIdx(curColResizing.field);
+//   const colIdx = getColIdx(curColResizing.field);
 
-  if (colIdx > -1) {
-    columns.value[colIdx].width = curColEl.offsetWidth + diffX;
-  }
+//   if (colIdx > -1) {
+//     columns.value[colIdx].width = curColEl.offsetWidth + diffX;
+//   }
 
-  resizerRef.value.style.display = 'none';
+//   resizerRef.value.style.display = 'none';
 
-  document.removeEventListener('mousemove', onColResizeMove);
-  document.removeEventListener('mouseup', onColResizeEnd);
-};
+//   document.removeEventListener('mousemove', onColResizeMove);
+//   document.removeEventListener('mouseup', onColResizeEnd);
+// };
 
 function onColDragStart(e: DragEvent) {
   const sourceCol = e.target as HTMLElement;
@@ -613,24 +576,12 @@ function onColDragOver(e: DragEvent) {
 
   if (colCenter < e.clientX) {
     // place indicators to right of targetCol
-    dropColIndicatorDown.value.setAttribute(
-      'style',
-      `top: ${iconDownTop}px;left:${iconRightLocation}`
-    );
-    dropColIndicatorUp.value.setAttribute(
-      'style',
-      `top: ${iconUpTop}px;left:${iconRightLocation}`
-    );
+    dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconRightLocation}`);
+    dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconRightLocation}`);
   } else {
     // place indicators to left of targetCol
-    dropColIndicatorDown.value.setAttribute(
-      'style',
-      `top: ${iconDownTop}px;left:${iconLeftLocation}`
-    );
-    dropColIndicatorUp.value.setAttribute(
-      'style',
-      `top: ${iconUpTop}px;left:${iconLeftLocation}`
-    );
+    dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconLeftLocation}`);
+    dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconLeftLocation}`);
   }
 
   dropColIndicatorDown.value.style.display = 'block';
@@ -638,11 +589,9 @@ function onColDragOver(e: DragEvent) {
   return;
 }
 
-const getColIdx = (field: string): number =>
-  columns.value.findIndex((col) => col.field === field);
+const getColIdx = (name: string): number => columns.value.findIndex((col) => col.name === name);
 
-const getClosestColEl = (target: HTMLElement): HTMLElement | null =>
-  target.closest('.vdt-th');
+const getClosestColEl = (target: HTMLElement): HTMLElement | null => target.closest('.vdt-th');
 
 function getOffset(target: HTMLElement): { top: number; left: number } {
   return { top: target.offsetTop, left: target.offsetLeft };

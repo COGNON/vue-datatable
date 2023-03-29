@@ -1,46 +1,49 @@
 <template>
-  <div :class="`vdt-thead ${rowSeparatorCls}`" role="presentation">
-    <div v-if="selection !== 'none'" :class="`vdt-th vdt-th--selection vdt-cell--extra ${colSeparatorCls}`">
-      <slot name="header-cell-selection">
-        <q-checkbox
-          v-if="selection === 'multiple'"
-          v-model="allSelected"
-          @update:model-value="(val) => $emit('onSelectAll', val)"
-        />
-      </slot>
-    </div>
+  <table :class="`vdt-thead ${rowSeparatorCls}`" role="presentation">
+    <thead>
+      <tr>
+        <th v-if="selection !== 'none'" :class="`vdt-th vdt-th--selection vdt-cell--extra ${colSeparatorCls}`">
+          <slot name="header-cell-selection">
+            <q-checkbox
+              v-if="selection === 'multiple'"
+              v-model="allSelected"
+              @update:model-value="(val) => $emit('onSelectAll', val)"
+            />
+          </slot>
+        </th>
 
-    <div v-if="$slots['expanded']" :class="`vdt-th vdt-td--expand ${colSeparatorCls}`" />
+        <div v-if="$slots['expanded']" :class="`vdt-th vdt-td--expand ${colSeparatorCls}`" />
 
-    <template v-for="col in columns" :key="col.field">
-      <header-cell
-        :column="col"
-        :class="`vdt-th ${colSeparatorCls}`"
-        :style="`width:${col.width}px;`"
-        :sorter="sorters[col.name]"
-        :resizable-columns="resizableColumns"
-        :field="col.field"
-        :draggable="true"
-        @update-sorter="(e) => $emit('updateSorter', e, col.name)"
-        @on-resize-start="(e) => $emit('onResizeStart', e, col)"
-        @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
-        @dragend="(e:DragEvent) => $emit('onDragEnd', e)"
-        @dragover="(e:DragEvent) => $emit('onDragOver', e)"
-        @drop="(e:DragEvent) => $emit('onDrop',e)"
-      >
-        <template v-if="$slots[`header-cell-${col.field}`]" #header-cell>
-          <slot :name="`header-cell-${col.field}`" />
-        </template>
-        <template v-else-if="$slots['header-cell']" #header-cell>
-          <slot name="header-cell" />
-        </template>
+        <template v-for="col in columns" :key="col.field">
+          <header-cell
+            :column="col"
+            :class="`vdt-th ${colSeparatorCls}`"
+            :sorter="sorters[col.name]"
+            :resizable-columns="resizableColumns"
+            :field="col.field"
+            :draggable="true"
+            @update-sorter="(e) => $emit('updateSorter', e, col.name)"
+            @on-resize-start="(e) => $emit('onResizeStart', e, col)"
+            @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
+            @dragend="(e:DragEvent) => $emit('onDragEnd', e)"
+            @dragover="(e:DragEvent) => $emit('onDragOver', e)"
+            @drop="(e:DragEvent) => $emit('onDrop',e)"
+          >
+            <template v-if="$slots[`header-cell-${col.field}`]" #header-cell>
+              <slot :name="`header-cell-${col.field}`" />
+            </template>
+            <template v-else-if="$slots['header-cell']" #header-cell>
+              <slot name="header-cell" />
+            </template>
 
-        <template #filter>
-          <slot name="filter" :col="col" />
+            <template #filter>
+              <slot name="filter" :col="col" />
+            </template>
+          </header-cell>
         </template>
-      </header-cell>
-    </template>
-  </div>
+      </tr>
+    </thead>
+  </table>
 </template>
 
 <script setup lang="ts">

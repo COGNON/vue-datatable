@@ -1,11 +1,7 @@
 <template>
-  <div class="vdt-th">
-    <div class="vdt-th--content">
-      <span
-        v-if="resizableColumns"
-        class="vdt-column--resizer"
-        @mousedown="(e) => $emit('onResizeStart', e)"
-      />
+  <th class="vdt-th">
+    <div class="vdt-th--content" :style="`width:${column.width}px;`">
+      <span v-if="resizableColumns" class="vdt-column--resizer" @mousedown="(e) => $emit('onResizeStart', e)" />
       <span
         :class="`vdt-th-content ${column.sortable ? 'clickable' : ''}`"
         @click="(e) => (column.sortable ? $emit('updateSorter', e) : null)"
@@ -21,7 +17,7 @@
     <div v-if="column.filterable" class="vdt-th--filter">
       <slot name="filter" />
     </div>
-  </div>
+  </th>
 </template>
 
 <script setup lang="ts">
@@ -34,9 +30,7 @@ const props = defineProps<{
   resizableColumns: boolean;
 }>();
 
-const sorterIcon = computed(() =>
-  props.sorter ? (props.sorter.dir === 'asc' ? 'ascending' : 'descending') : ''
-);
+const sorterIcon = computed(() => (props.sorter ? (props.sorter.dir === 'asc' ? 'ascending' : 'descending') : ''));
 
 defineEmits<{
   (e: 'updateSorter', event: MouseEvent): void;

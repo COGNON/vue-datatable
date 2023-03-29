@@ -42,7 +42,7 @@
             :key="colIdx"
             :col="col"
             :filter="filters[col.name] || ''"
-            @update:model-value="(val) => $emit('updateFilter', col.name, val)"
+            @update:model-value="(val) => $emit('updateFilter', col.field, val)"
           />
         </div>
       </div>
