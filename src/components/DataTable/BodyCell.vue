@@ -1,35 +1,23 @@
 <template>
-  <div class="vdt-cell-content">
-    <template v-if="$slots[`body-cell-${column.field}`]">
-      <slot :name="`body-cell-${column.field}`" />
-    </template>
-    <template v-else-if="$slots['body-cell']">
-      <slot name="body-cell" />
-    </template>
-    <template v-else>
-      {{ row[column.field] }}
-    </template>
-  </div>
+  <td class="vdt--cell" :aria-colcount="colIdx + 1" tabindex="-1" :style="{ width: `${col.width}px` }">
+    <slot name="body-cell" :col="col" :row="row" :value="value" :col-index="colIdx">
+      {{ value }}
+    </slot>
+  </td>
 </template>
 
 <script setup lang="ts">
-import { VColumn } from './types';
+import { computed } from 'vue';
+import { VColumn } from '../types';
 
-defineProps<{
-  column: VColumn;
+const props = defineProps<{
   row: any;
+  col: VColumn;
+  colIdx: number;
 }>();
+
+const value = computed(() => {
+  if (typeof props.col.field === 'string') return props.row[props.col.field];
+  else return props.col.field(props.row);
+});
 </script>
-
-<style lang="scss" scoped>
-.vdt-cell,
-.vdt-cell-content {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vdt-cell {
-  padding: 5px;
-  display: inline-block;
-}
-</style>

@@ -1,50 +1,49 @@
 <template>
-  <table-row
-    v-for="(item, idx) in rows"
-    :key="item.id"
-    :row="item"
-    :line-height="lineHeight"
-    :row-separator-cls="rowSeparatorCls"
-    :col-separator-cls="colSeparatorCls"
-    :hightlight-on-hover="hightlightOnHover"
-    :striped-rows="idx % 2 ? stripedRows : false"
-    :selection="selection"
-    :selected="selectedRows[idx] || allSelected || false"
-    :columns="columns"
-    :wrap-cells="wrapCells"
-    @on-select="(val) => $emit('onRowSelect', idx, val)"
-  >
-    <template v-for="(_, name) in $slots" #[name]="slotData">
-      <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
-    </template>
-  </table-row>
+  <tbody>
+    <table-row
+      v-for="(row, rowIdx) in rows"
+      :key="rowIdx"
+      :row="row"
+      :row-index="rowIdx + (virtualStartIsOdd ? 1 : 0)"
+      :columns="columns"
+      :row-height="rowHeight"
+      :selection="selection"
+      :selected="selected[row[rowKey]] || false"
+      @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
+      @update-selected="$emit('updateSelected', row)"
+    >
+      <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+        <slot
+          v-if="String(slotName).startsWith('body') || String(slotName).startsWith('expanded')"
+          :name="slotName"
+          v-bind="slotProps || {}"
+        />
+      </template>
+    </table-row>
+  </tbody>
 </template>
 
 <script setup lang="ts">
-import { CellWrap, SelectedRow, SelectionModes, VColumn } from './types';
+import { computed } from 'vue';
+import { VSelectedRow, VSelectionModes, VColumn } from '../types';
 import TableRow from './TableRow.vue';
 
-interface VScrollerProps {
+const props = defineProps<{
   rows: any[];
   columns: VColumn[];
-  lineHeight: number;
-  rowSeparatorCls: string;
-  colSeparatorCls: string;
-  hightlightOnHover: boolean;
-  stripedRows: boolean;
-  selection: SelectionModes;
-  allSelected: boolean;
-  selectedRows: SelectedRow;
-  wrapCells: CellWrap;
-}
-
-withDefaults(defineProps<VScrollerProps>(), {
-  rows: () => [],
-});
+  rowHeight: number;
+  colWidths: number;
+  virtualStartNode?: number;
+  selection: VSelectionModes;
+  selected: VSelectedRow;
+  rowKey: string;
+}>();
 
 defineEmits<{
-  (e: 'onRowSelect', rowIdx: number, val: boolean): void;
+  (e: 'updateExpandedHeight', changeHeight: number): void;
+  (e: 'updateSelected', row: any): void;
 }>();
-</script>
 
-<style lang="scss" scoped></style>
+// prevents striped rows from shifting as the virtual scroller moves by baselining the row index as if the count starts from 0
+const virtualStartIsOdd = computed(() => props.virtualStartNode || 0 % 2 > 0);
+</script>

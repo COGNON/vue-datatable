@@ -1,94 +1,45 @@
 <template>
-  <div class="scroller-wrapper" :style="rootStyle" @scroll="onScroll">
-    <slot name="before" />
-
-    <div ref="viewport" class="vdt-viewscroller" :style="viewportStyle">
-      <div ref="spacer" class="vdt-spacer" :style="spacerStyle">
-        <slot name="content" :visible-rows="visibleRows" />
+  <div class="vdt--tbody" role="presentation">
+    <div class="vdt--tbody-clipper" role="presentation">
+      <div ref="tbodyScrollRef" class="vdt--tbody-viewport" role="presentation">
+        <table class="vdt--tbody-container" role="rowgroup" :style="tbodyContainerStyle">
+          <slot :virtual-rows="visibleRows" :start-node="startNode" />
+        </table>
       </div>
     </div>
 
-    <slot name="footer" />
+    <!-- fake vertical scroll -->
+    <fake-vertical-scroll :tbody-height="tbodyHeight" :scroll-top="scrollTop" @handle-scroll="handleVScrollEvent" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { VColumn } from './types';
+import { computed, onMounted } from 'vue';
+import { VColumn } from '../types';
+import FakeVerticalScroll from './FakeVerticalScroll.vue';
+import useVirtualScroll from 'src/composables/useVirtualScroll';
 
-interface VScrollerProps {
+const props = defineProps<{
   rows: any[];
   columns: VColumn[];
-  lineHeight: number;
-  rootHeight: number;
+  rowHeight: number;
   virtualScrollNodePadding: number;
-}
+  rootHeight: number;
+  colWidths: number;
+  scrollLeft: number;
+  stripedRows: boolean;
+  expandedRowHeight: number;
+}>();
 
-const props = defineProps<VScrollerProps>();
+const { tbodyScrollRef, scrollTop, visibleRows, offsetY, startNode, tbodyHeight, onVScroll, handleVScrollEvent } =
+  useVirtualScroll(props);
 
-const viewport = ref(null);
-const spacer = ref(null);
+onMounted(() => tbodyScrollRef.value?.addEventListener('scroll', onVScroll));
 
-const rowCount = computed(() => props.rows.length);
-
-// # of rows * row height for the total size of the table
-const viewportHeight = computed(() => rowCount.value * props.lineHeight);
-
-const scrollTop = ref(0);
-const startNode = computed(() => getStartNode(scrollTop.value));
-const visibleNodesCount = computed(() =>
-  getVisibleNodesCount(startNode.value, rowCount.value)
-);
-const offsetY = computed(() => startNode.value * props.lineHeight);
-
-function getVisibleNodes(
-  startNode: number,
-  visibleNodesCount: number
-): unknown[] {
-  return props.rows.slice(startNode, visibleNodesCount);
-}
-
-function getStartNode(scrollTop: number): number {
-  let tmpStart =
-    Math.floor(scrollTop / props.lineHeight) - props.virtualScrollNodePadding;
-  return Math.max(0, tmpStart);
-}
-
-function getVisibleNodesCount(startNode: number, rowCount: number): number {
-  const count =
-    Math.ceil(props.rootHeight / props.lineHeight) +
-    2 * props.virtualScrollNodePadding;
-  return Math.min(rowCount - startNode, count);
-}
-
-function onScroll(event: UIEvent) {
-  const target = event.target as HTMLElement;
-  scrollTop.value = target.scrollTop;
-}
-
-const visibleRows = computed<unknown[]>(() =>
-  getVisibleNodes(startNode.value, startNode.value + visibleNodesCount.value)
-);
-
-const spacerStyle = computed(() => {
-  return { transform: `translateY(${offsetY.value}px)` };
-});
-
-const viewportStyle = computed(() => {
-  return { height: viewportHeight.value + 'px' };
-});
-
-const rootStyle = computed(() => {
-  return { height: props.rootHeight + 'px' };
+const tbodyContainerStyle = computed(() => {
+  return {
+    width: `${props.colWidths}px`,
+    transform: `translate(${-props.scrollLeft}px,${offsetY.value}px)`,
+  };
 });
 </script>
-
-<style lang="scss" scoped>
-.scroller-wrapper {
-  overflow: auto;
-}
-.vdt-viewscroller {
-  position: relative;
-  width: fit-content;
-}
-</style>
