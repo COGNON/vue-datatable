@@ -22,10 +22,16 @@ export type VSorter = {
   dir: 'asc' | 'desc';
 };
 
-export type CellSeparators = 'row' | 'column' | 'cell' | 'none';
-export type SelectionModes = 'single' | 'multiple' | 'none';
-export type CellWrap = 'none' | 'wrap';
+export type VCellSeparators = 'row' | 'column' | 'cell' | 'none';
+export type VSelectionModes = 'single' | 'multiple' | 'none';
+export type VCellWrap = 'none' | 'wrap';
 
-export type SelectedRow = {
-  [key: number]: boolean;
+export type VSelectedRow = {
+  [key: string]: boolean;
+};
+
+export type VPagination = {
+  rowsPerPage: number;
+  pageOptions?: number[];
+  initialPage?: number;
 };

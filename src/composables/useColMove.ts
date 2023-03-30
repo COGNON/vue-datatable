@@ -54,6 +54,10 @@ export default function useColMove() {
     dropColIndicatorUp.value.style.display = 'none';
   };
 
+  const iconDownTop = ref(0);
+  const iconUpTop = ref(0);
+  const iconYLocation = ref(0);
+
   const onColDragOver = (e: DragEvent) => {
     // fires off the element being hovered over
     e.preventDefault(); // allows dropping
@@ -68,22 +72,16 @@ export default function useColMove() {
     const { top, left } = getOffset(targetCol);
     const colWidth = targetCol.offsetWidth;
     const colCenter = left + colWidth / 2;
-    const colHeight = targetCol.clientHeight;
     const iconHeight = dropColIndicatorDown.value.clientHeight / 2;
     const iconWidth = dropColIndicatorDown.value.clientWidth / 2;
-    const iconLeftLocation = left - iconWidth + 'px';
-    const iconRightLocation = left + colWidth - iconWidth + 'px';
-    const iconDownTop = top - iconHeight;
-    const iconUpTop = top + colHeight - iconHeight;
+
+    iconDownTop.value = top - iconHeight;
+    iconUpTop.value = top + targetCol.clientHeight - iconHeight;
 
     if (colCenter < e.clientX) {
-      // place indicators to right of targetCol
-      dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconRightLocation}`);
-      dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconRightLocation}`);
+      iconYLocation.value = left + colWidth - iconWidth;
     } else {
-      // place indicators to left of targetCol
-      dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconLeftLocation}`);
-      dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconLeftLocation}`);
+      iconYLocation.value = left - iconWidth;
     }
 
     dropColIndicatorDown.value.style.display = 'block';
@@ -97,5 +95,15 @@ export default function useColMove() {
     return { top: target.offsetTop, left: target.offsetLeft };
   }
 
-  return { dropColIndicatorDown, dropColIndicatorUp, onColDragStart, onColDragOver, onColDragEnd, onColDrop };
+  return {
+    dropColIndicatorDown,
+    dropColIndicatorUp,
+    iconDownTop,
+    iconUpTop,
+    iconYLocation,
+    onColDragStart,
+    onColDragOver,
+    onColDragEnd,
+    onColDrop,
+  };
 }

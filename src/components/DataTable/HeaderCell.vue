@@ -1,60 +1,46 @@
 <template>
-  <th class="vdt-th">
-    <div class="vdt-th--content" :style="`width:${column.width}px;`">
-      <span v-if="resizableColumns" class="vdt-column--resizer" @mousedown="(e) => $emit('onResizeStart', e)" />
-      <span
-        :class="`vdt-th-content ${column.sortable ? 'clickable' : ''}`"
-        @click="(e) => (column.sortable ? $emit('updateSorter', e) : null)"
-      >
-        <slot name="header-cell">
-          {{ column.header }}
+  <th class="vdt--th" tabindex="-1" :name="col.name">
+    <div
+      v-if="resizableColumns"
+      class="vdt--th-resizer"
+      @mousedown.stop.left="(e: MouseEvent) => $emit('onResizeStart', e)"
+    />
+
+    <div class="vdt--th-label" role="presentation">
+      <span class="vdt--th-label-text vdt--clickable" @click="(e) => $emit('updateSorter', e)">
+        <slot name="header-cell" :col="col" :header="col.header">
+          {{ col.header }}
         </slot>
       </span>
-
-      <span v-if="sorter" :class="`mdi mdi-sort-${sorterIcon}`" />
+      <div v-if="sorterIdx !== -1">
+        <span :class="`mdi mdi-sort-${sorterIcon}`" />
+        <sub v-if="sorters.length > 1">{{ sorterIdx + 1 }}</sub>
+      </div>
     </div>
 
-    <div v-if="column.filterable" class="vdt-th--filter">
-      <slot name="filter" />
-    </div>
+    <slot name="filter" />
   </th>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { VColumn, VSorterData } from './types';
+import { VColumn, VSorter } from '../types';
+import { findSorterIndex } from '../utils';
 
 const props = defineProps<{
-  column: VColumn;
-  sorter: VSorterData;
+  col: VColumn;
   resizableColumns: boolean;
+  sorters: VSorter[];
 }>();
-
-const sorterIcon = computed(() => (props.sorter ? (props.sorter.dir === 'asc' ? 'ascending' : 'descending') : ''));
 
 defineEmits<{
   (e: 'updateSorter', event: MouseEvent): void;
   (e: 'onResizeStart', event: MouseEvent): void;
 }>();
-</script>
 
-<style lang="scss" scoped>
-.vdt-th {
-  position: relative;
-}
-.vdt-th-content {
-  margin: 5px;
-}
-.vdt-column--resizer {
-  display: block;
-  position: absolute !important;
-  top: 0;
-  right: 0;
-  margin: 0;
-  width: 0.5rem;
-  height: 100%;
-  padding: 0px;
-  cursor: col-resize;
-  border: 1px solid transparent;
-}
-</style>
+const sorterIdx = computed(() => findSorterIndex(props.sorters, props.col.name));
+const sorterIcon = computed(() => {
+  if (sorterIdx.value === -1) return {};
+  return props.sorters[sorterIdx.value]['dir'] === 'asc' ? 'ascending' : 'descending';
+});
+</script>

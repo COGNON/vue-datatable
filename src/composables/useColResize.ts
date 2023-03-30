@@ -1,13 +1,11 @@
 import { VColumn } from 'src/components/DataTable/types';
-import { getColIdx } from 'src/components/utils';
 import { ref } from 'vue';
 
 export default function useColResize() {
   const resizerRef = ref<HTMLElement | undefined>();
   const rootRef = ref<HTMLElement | undefined>();
-  const scrollLeft = ref(0);
   const resizingCol = ref(false);
-  const updatedCol = ref<VColumn>();
+  const widthChanged = ref(0);
 
   let curColEl: HTMLElement | null = null;
   let curColResizing: VColumn | null = null;
@@ -43,12 +41,12 @@ export default function useColResize() {
 
     resizingCol.value = false;
     curColResizing.width = curColEl.offsetWidth + diffX;
-    updatedCol.value = curColResizing;
+    widthChanged.value = diffX;
     resizerRef.value.style.display = 'none';
 
     document.removeEventListener('mousemove', onColResizeMove);
     document.removeEventListener('mouseup', onColResizeEnd);
   };
 
-  return { onColResizeStart, resizerRef, rootRef, updatedCol };
+  return { onColResizeStart, resizerRef, rootRef, widthChanged };
 }

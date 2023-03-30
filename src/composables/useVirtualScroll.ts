@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { computed, ref } from 'vue';
 
-export default function useVirtualScroll(props) {
+export default function useVirtualScroll(props: any) {
   const tbodyScrollRef = ref<HTMLElement | undefined>();
   const scrollTop = ref(0);
+  const tbodyHeight = computed(() => props.rows.length * props.rowHeight + props.expandedRowHeight);
 
   const visibleNodesCount = computed(() => getVisibleNodesCount(startNode.value, props.rows.length));
   const offsetY = computed(() => startNode.value * props.rowHeight);
@@ -39,5 +39,5 @@ export default function useVirtualScroll(props) {
     }
   }
 
-  return { tbodyScrollRef, scrollTop, visibleRows, offsetY, startNode, onVScroll, handleVScrollEvent };
+  return { tbodyScrollRef, scrollTop, visibleRows, offsetY, startNode, tbodyHeight, onVScroll, handleVScrollEvent };
 }

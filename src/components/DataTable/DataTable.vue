@@ -1,16 +1,28 @@
 <template>
-  <div class="vdt-container">
+  <div
+    ref="rootRef"
+    :class="`vdt--root-wrapper ${tableBorderCls}`"
+    role="presentation"
+    :style="{ height: `${rootHeight}px` }"
+  >
     <div v-if="loading" class="vdt-loading">
       <slot name="loading">{{ loadingText }}</slot>
     </div>
 
-    <div v-if="filterGlobal" class="vdt-global-filter">
-      <q-input
-        v-model="globalFilter"
-        style="width: 200px"
-        class="vdt-global-filter-input"
-        v-bind="filterComponentProps"
-      />
+    <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer" />
+    <div v-if="reorderableColumns" class="vdt--column-drop-wrapper" role="presentation">
+      <div ref="dropColIndicatorDown" class="mdi mdi-arrow-down-bold vdt--drop-indicator" :style="dropDownStyle" />
+      <div ref="dropColIndicatorUp" class="mdi mdi-arrow-up-bold vdt--drop-indicator" :style="dropUpStyle" />
+    </div>
+
+    <div v-if="globalFilter" class="vdt-global-filter">
+      <slot
+        name="globalFilterInput"
+        :filter-value="globalFilterValue"
+        :update-filter="(val: any) => globalFilterValue = val"
+      >
+        <q-input v-model="globalFilterValue" style="width: 200px" class="vdt-global-filter-input" dense outlined />
+      </slot>
     </div>
 
     <div v-if="$slots.top || title" class="vdt-top">
@@ -20,639 +32,369 @@
     </div>
 
     <div
-      v-if="pagination !== 0"
-      class="vdt-table"
-      role="tablegrid"
-      :aria-colcount="columns.length"
-      :aria-rowcount="pagination ? totalRowCount : processedRows.length"
-      :style="{ overflow: 'auto', height: height + 'px' }"
+      v-if="pagination.rowsPerPage && processedRows.length"
+      class="vdt--root-paged"
+      :class="`${cellBorderCls} ${hoverCls} ${stripedCls}`"
+      :style="{ height: `${rootHeight}px` }"
     >
-      <table-header
-        :columns="columns"
-        :row-separator-cls="rowSeparatorCls"
-        :col-separator-cls="colSeparatorCls"
-        :sorters="sorters"
-        :reorderable-columns="reorderableColumns"
-        :resizable-columns="resizableColumns"
-        :selection="selection"
-        :selected-rows="selectedRows"
-        :row-number="processedRows.length"
-        @update-sorter="updateSorters"
-        @on-resize-start="onColResizeStart"
-        @on-drag-start="onColDragStart"
-        @on-drag-end="onColDragEnd"
-        @on-drag-over="onColDragOver"
-        @on-drop="onColDrop"
-        @on-select-all="onSelectAll"
-      >
-        <template v-for="(_, name) in $slots" #[name]="slotData">
-          <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
-        </template>
-
-        <template v-if="filterHeader" #filter="colProps">
-          <q-input v-model="filters[colProps.col.field]" class="vdt-hdr-filter" v-bind="filterComponentProps" />
-        </template>
-      </table-header>
-
-      <table-body
-        v-if="processedRows.length"
-        :rows="processedRows[currentPage]"
-        :line-height="lineHeight"
-        :columns="columns"
-        :row-separator-cls="rowSeparatorCls"
-        :col-separator-cls="colSeparatorCls"
-        :hightlight-on-hover="hightlightOnHover"
-        :striped-rows="stripedRows"
-        :selection="selection"
-        :all-selected="allSelected"
-        :selected-rows="selectedRows"
-        :wrap-cells="wrapCells"
-        @on-row-select="onRowSelect"
-      >
-        <template v-for="(_, name) in $slots" #[name]="slotData">
-          <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
-        </template>
-      </table-body>
-    </div>
-
-    <virtual-scroller
-      v-else
-      ref="rootRef"
-      class="vdt-table"
-      role="table"
-      :rows="processedRows"
-      :columns="columns"
-      :line-height="lineHeight"
-      :root-height="height"
-      :virtual-scroll-node-padding="virtualScrollNodePadding"
-    >
-      <template #before>
+      <table class="vdt--table-paged">
         <table-header
-          :columns="columns"
-          :row-separator-cls="rowSeparatorCls"
-          :col-separator-cls="colSeparatorCls"
-          :sorters="sorters"
-          :reorderable-columns="reorderableColumns"
+          :columns="processedColumns"
+          :col-widths="colWidths"
+          :scroll-left="scrollLeft"
+          :row-height="rowHeight"
           :resizable-columns="resizableColumns"
+          :reorderable-columns="reorderableColumns"
+          :sorters="sorters"
+          :filters="filters"
+          :style="{ width: `${colWidths}px` }"
           :selection="selection"
-          :selected-rows="selectedRows"
-          :row-number="processedRows.length"
+          :selected="selected"
+          :total-row-count="rows.length"
           @update-sorter="updateSorters"
+          @update-filter="updateFilter"
           @on-resize-start="onColResizeStart"
           @on-drag-start="onColDragStart"
           @on-drag-end="onColDragEnd"
           @on-drag-over="onColDragOver"
-          @on-drop="onColDrop"
-          @on-select-all="onSelectAll"
+          @on-drop="handleColDrop"
+          @select-all="onSelectAll"
         >
-          <template v-for="(_, name) in $slots" #[name]="slotData">
-            <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
-          </template>
-
-          <template v-if="filterHeader" #filter="colProps">
-            <q-input v-model="filters[colProps.col.field]" class="vdt-hdr-filter" v-bind="filterComponentProps" />
+          <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+            <slot
+              v-if="String(slotName).startsWith('header') || String(slotName).startsWith('expanded')"
+              :name="slotName"
+              v-bind="slotProps || {}"
+            />
           </template>
         </table-header>
-      </template>
-
-      <template #content="scrollerProps">
         <table-body
           v-if="processedRows.length"
-          :rows="scrollerProps.visibleRows"
-          :line-height="lineHeight"
-          :columns="columns"
-          :row-separator-cls="rowSeparatorCls"
-          :col-separator-cls="colSeparatorCls"
-          :hightlight-on-hover="hightlightOnHover"
-          :striped-rows="stripedRows"
+          :rows="processedRows[currentPage]"
+          :columns="processedColumns"
+          :row-height="rowHeight"
+          :col-widths="colWidths"
           :selection="selection"
-          :all-selected="allSelected"
-          :selected-rows="selectedRows"
-          :wrap-cells="wrapCells"
-          @on-row-select="onRowSelect"
+          :selected="selectedByKey"
+          :row-key="rowKey"
+          @update-expanded-height="(val) => (expandedRowHeight += val)"
+          @update-selected="updateSelected"
         >
-          <template v-for="(_, name) in $slots" #[name]="slotData">
-            <slot v-if="$slots[name]" :name="name" v-bind="slotData" />
+          <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+            <slot
+              v-if="String(slotName).startsWith('body') || String(slotName).startsWith('expanded')"
+              :name="slotName"
+              v-bind="slotProps || {}"
+            />
           </template>
         </table-body>
-
         <div v-else class="vdt-no-data">
           <slot name="noData">{{ noDataText }}</slot>
         </div>
-      </template>
-    </virtual-scroller>
+      </table>
+    </div>
 
-    <div v-if="$slots.bottom || selectedRowsCount || pagination" class="vdt-bottom">
+    <div v-else class="vdt--root-wrapper-body" role="presentation">
+      <div
+        class="vdt--root"
+        role="treegrid"
+        :aria-colcount="processedColumns.length"
+        :aria-multiselectable="true"
+        :aria-rowcount="rows.length"
+        :class="`${cellBorderCls} ${hoverCls} ${stripedCls}`"
+      >
+        <table-header
+          :columns="processedColumns"
+          :col-widths="colWidths"
+          :scroll-left="scrollLeft"
+          :row-height="rowHeight"
+          :resizable-columns="resizableColumns"
+          :reorderable-columns="reorderableColumns"
+          :sorters="sorters"
+          :filters="filters"
+          :style="{ width: `${colWidths}px` }"
+          :selection="selection"
+          :selected="selected"
+          :total-row-count="rows.length"
+          @update-sorter="updateSorters"
+          @update-filter="updateFilter"
+          @on-resize-start="onColResizeStart"
+          @on-drag-start="onColDragStart"
+          @on-drag-end="onColDragEnd"
+          @on-drag-over="onColDragOver"
+          @on-drop="handleColDrop"
+          @select-all="onSelectAll"
+        >
+          <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+            <slot
+              v-if="String(slotName).startsWith('header') || String(slotName).startsWith('expanded')"
+              :name="slotName"
+              v-bind="slotProps || {}"
+            />
+          </template>
+        </table-header>
+
+        <virtual-scroller
+          v-slot="{ virtualRows, startNode }"
+          :rows="processedRows"
+          :columns="processedColumns"
+          :root-height="rootHeight"
+          :virtual-scroll-node-padding="virtualScrollNodePadding"
+          :row-height="rowHeight"
+          :col-widths="colWidths"
+          :scroll-left="scrollLeft"
+          :striped-rows="stripedRows"
+          :expanded-row-height="expandedRowHeight"
+        >
+          <table-body
+            v-if="virtualRows.length"
+            :rows="virtualRows"
+            :columns="processedColumns"
+            :row-height="rowHeight"
+            :col-widths="colWidths"
+            :virtual-start-node="startNode"
+            :selection="selection"
+            :selected="selectedByKey"
+            :row-key="rowKey"
+            @update-expanded-height="(val) => (expandedRowHeight += val)"
+            @update-selected="updateSelected"
+          >
+            <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+              <slot
+                v-if="String(slotName).startsWith('body') || String(slotName).startsWith('expanded')"
+                :name="slotName"
+                v-bind="slotProps || {}"
+              />
+            </template>
+          </table-body>
+
+          <div v-else class="vdt-no-data">
+            <slot name="noData">{{ noDataText }}</slot>
+          </div>
+        </virtual-scroller>
+
+        <!-- fake horizontal scroll -->
+        <fake-horizontal-scroll
+          :col-widths="colWidths"
+          :client-width="rootRef?.clientWidth || 0"
+          @update-scroll="(val) => (scrollLeft = val)"
+        />
+      </div>
+    </div>
+
+    <div
+      v-if="!hideTableBottom && ($slots.bottom || selection !== 'none' || pagination.rowsPerPage)"
+      class="vdt-bottom"
+    >
       <slot name="bottom">
-        <div v-if="selectedRowsCount">{{ selectedRowsCount }} selected</div>
+        <div v-if="selected.length">{{ selected.length }} selected</div>
       </slot>
 
       <div class="vdt-bottom-spacer" />
 
-      <div class="vdt-pagination">
+      <div class="vdt--pagination">
         <slot name="pagination">
           <table-paginator
-            v-if="pagination"
+            v-if="pagination.rowsPerPage"
             :current-page="currentPage"
             :total-page-num="processedRows.length"
-            :rows-per-page="pagination"
+            :pagination="pagination"
             :total-row-count="totalRowCount"
             @update-page="(newPage) => (currentPage = newPage)"
           />
         </slot>
       </div>
     </div>
-
-    <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer"></div>
-    <template v-if="reorderableColumns">
-      <div ref="dropColIndicatorDown" class="mdi mdi-arrow-down-bold vdt--drop-indicator" />
-      <div ref="dropColIndicatorUp" class="mdi mdi-arrow-up-bold vdt--drop-indicator" />
-    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { VColumn, VFilter, CellSeparators, VSorter, SelectionModes, SelectedRow, CellWrap } from './types';
 import { computed, ref, watch } from 'vue';
+import { VColumn, VFilter, VSorter, VSelectionModes, VCellSeparators, VPagination } from '../types';
 import TableHeader from './TableHeader.vue';
-import TableBody from './TableBody.vue';
+import FakeHorizontalScroll from './FakeHorizontalScroll.vue';
 import VirtualScroller from './VirtualScroller.vue';
-import FilterComponent from './FilterComponent.vue';
-import { QInputProps } from 'quasar';
+import TableBody from './TableBody.vue';
 import TablePaginator from './TablePaginator.vue';
+import useSorter from 'src/composables/useSorter';
+import useFilter from 'src/composables/useFilter';
 import useColResize from 'src/composables/useColResize';
+import useColMove from 'src/composables/useColMove';
+import useTableCls from 'src/composables/useTableCls';
+import useRowSelect from 'src/composables/useRowSelect';
+import usePagination from 'src/composables/usePagination';
 
-const { onColResizeStart, resizerRef, rootRef, updatedCol } = useColResize();
-watch(updatedCol, (col) => {
-  if (col) {
-    const colIdx = getColIdx(col.name);
-    if (colIdx !== -1) columns.value[colIdx] = col;
-  }
-});
-
-const dropColIndicatorDown = ref<HTMLElement | undefined>();
-const dropColIndicatorUp = ref<HTMLElement | undefined>();
-
-interface VGridProps {
-  rows: any[];
+interface Props {
   columns: VColumn[];
-  filterGlobal?: boolean;
-  filterHeader?: boolean;
-  separators?: CellSeparators;
-  reorderableColumns: boolean;
-  resizableColumns: boolean;
+  rows: any[];
+  rootHeight?: number;
+  rowHeight?: number;
+  virtualScrollNodePadding?: number;
+  borders?: VCellSeparators;
+  bordered?: boolean;
+  resizableColumns?: boolean;
+  reorderableColumns?: boolean;
   hightlightOnHover?: boolean;
   stripedRows?: boolean;
+  globalFilter?: boolean;
   defaultFilters?: VFilter;
-  defaultSorters?: VSorter;
-  defaultColProps?: Partial<VColumn>;
-  title?: string;
-  lineHeight?: number;
-  selection?: SelectionModes;
-  wrapCells?: CellWrap;
+  defaultSorters?: VSorter[];
   loading?: boolean;
   loadingText?: string;
+  title?: string;
   noDataText?: string;
-  height?: number;
-  virtualScrollNodePadding?: number;
-  pagination?: number;
+  selection?: VSelectionModes;
+  rowKey?: string;
+  pagination?: VPagination;
+  hideTableBottom?: boolean;
 }
 
-const props = withDefaults(defineProps<VGridProps>(), {
-  rows: () => [],
-  filters: false,
-  filterHeader: false,
-  separators: 'none',
-  filterComponent: FilterComponent,
-  filterComponentProps: {},
-  reorderableColumns: false,
+const props = withDefaults(defineProps<Props>(), {
+  rootHeight: 600,
+  rowHeight: 28,
+  virtualScrollNodePadding: 20,
+  borders: 'none',
+  bordered: false,
   resizableColumns: false,
+  reorderableColumns: false,
   hightlightOnHover: false,
   stripedRows: false,
-  title: '',
-  lineHeight: 30,
-  selection: 'none',
-  wrapCells: 'none',
+  globalFilter: false,
   loading: false,
   loadingText: 'Loading...',
+  title: '',
   noDataText: 'No data found',
-  height: 400,
-  virtualScrollNodePadding: 20,
-  pagination: 0,
+  selection: 'none',
+  rowKey: '',
+  hideTableBottom: false,
+  pagination: () => {
+    return { rowsPerPage: 0 };
+  },
   defaultFilters: () => {
     return {};
   },
-  defaultSorters: () => {
-    return {};
-  },
-  defaultColProps: () => {
-    return {
-      sortable: true,
-      filterable: true,
-    };
-  },
+  defaultSorters: () => [],
 });
 
-const currentPage = ref(0);
-const totalRowCount = ref(0);
+const scrollLeft = ref(0);
+const expandedRowHeight = ref(0);
 
-const columns = ref(getFinalColumns(props.columns));
+const { currentPage, totalRowCount, pageRows } = usePagination(props);
+const { selected, selectedByKey, updateSelected, onSelectAll } = useRowSelect(props);
+const { cellBorderCls, tableBorderCls, hoverCls, stripedCls } = useTableCls(props);
+
+const { onColResizeStart, resizerRef, rootRef, widthChanged } = useColResize();
+watch(widthChanged, (newChanged) => {
+  if (scrollLeft.value !== 0 && scrollLeft.value > colWidths.value - (rootRef.value?.clientWidth || 0)) {
+    scrollLeft.value = Math.max(0, scrollLeft.value + newChanged);
+  }
+});
+
+const processedColumns = ref(processColumns(props.columns));
 watch(
   () => props.columns,
-  (newCols) => (columns.value = getFinalColumns(newCols))
+  (newCols) => (processedColumns.value = processColumns(newCols))
 );
-function getFinalColumns(columns: VColumn[]): VColumn[] {
-  return columns.map((col) => Object.assign({}, props.defaultColProps, col));
+
+function processColumns(columns: VColumn[]) {
+  return columns;
 }
 
-const sorters = ref<VSorter>(props.defaultSorters);
+const {
+  dropColIndicatorDown,
+  dropColIndicatorUp,
+  iconDownTop,
+  iconUpTop,
+  iconYLocation,
+  onColDragStart,
+  onColDragOver,
+  onColDragEnd,
+  onColDrop,
+} = useColMove();
+function handleColDrop(e: DragEvent) {
+  processedColumns.value = onColDrop(e, processedColumns.value);
+}
+
+// use scrollleft to adjust the icon position based on horizontal scroll
+const dropDownStyle = computed(() => {
+  return { top: `${iconDownTop.value}px`, left: `${iconYLocation.value - scrollLeft.value}px` };
+});
+
+const dropUpStyle = computed(() => {
+  return { top: `${iconUpTop.value}px`, left: `${iconYLocation.value - scrollLeft.value}px` };
+});
+
+const globalFilterValue = ref('');
+function filterGlobally(filter: string, rows: any[]): any[] {
+  if (!filter) return props.rows;
+  return handleGlobalFilter(filter, rows);
+}
 
 const filters = ref<VFilter>(props.defaultFilters);
-const filterComponentProps: Partial<QInputProps> = {
-  dense: true,
-  filled: true,
-  label: 'Search',
-};
-
-function filterRows(filters: VFilter | string, rows: any[]): any[] {
-  if (typeof filters === 'string' && filters) {
-    // global filter
-    return rows.filter((row) => {
-      return Object.values(row).some((value) => {
-        return String(value).toLowerCase().includes(filters.toLowerCase());
-      });
-    });
-  }
-
-  // no filters, return original rows
-  if (!Object.keys(filters).length) return props.rows;
-
-  return rows.filter((row) => {
-    return Object.keys(filters).every((field) => {
-      if (!filters[field]) {
-        delete filters[field];
-        return true;
-      }
-      return row[field] ? row[field].toLowerCase().includes(filters[field].toLowerCase()) : false;
-    });
-  });
-}
-
-const processedRows = ref(processRows(props.rows));
 watch(
-  () => props.rows,
-  (newRows) => (processedRows.value = processRows(newRows))
+  () => props.defaultFilters,
+  (newFilters) => (filters.value = newFilters)
 );
 
+function updateFilter(field: string, val: any) {
+  if (val) filters.value[field] = String(val);
+  else delete filters.value[field];
+}
+
+const sorters = ref<VSorter[]>(props.defaultSorters);
 watch(
-  () => props.pagination,
-  () => (processedRows.value = processRows(props.rows))
+  () => props.defaultSorters,
+  (newSorters) => (sorters.value = newSorters)
 );
 
-const allSelected = ref(false);
-const selectedRows = ref<SelectedRow>({});
-function onSelectAll(val: boolean) {
-  allSelected.value = val;
+const { sortRows, handleSortUpdate } = useSorter();
 
-  // actually (de)select all
-  for (let i = 0; i < processedRows.value.length; i++) {
-    if (val) selectedRows.value[i] = val;
-    else delete selectedRows.value[i];
+const processedRows = computed(() => {
+  let rows = props.rows;
+  rows = sortRows(sorters.value, rows);
+
+  if (props.globalFilter) {
+    rows = filterGlobally(globalFilterValue.value, rows);
+  } else {
+    rows = filterRows(filters.value, rows);
   }
-}
 
-function onRowSelect(rowIdx: number, selected: boolean) {
-  if (selected) selectedRows.value[rowIdx] = selected;
-  else delete selectedRows.value[rowIdx];
+  if (props.pagination.rowsPerPage !== 0) rows = pageRows(rows);
 
-  if (props.selection === 'single') {
-    // deselect all others
-    const rowsSelected = Object.keys(selectedRows.value);
-    if (rowsSelected.length > 1) {
-      rowsSelected.forEach((idx: number) => {
-        if (idx != rowIdx) delete selectedRows.value[idx];
-      });
-    }
-  }
-}
-
-const selectedRowsCount = computed(() => Object.keys(selectedRows.value).length);
-const rowSeparatorCls = computed<string>(() => (props.separators.match(/row|cell/) ? 'vdt-row--separators' : ''));
-const colSeparatorCls = computed<string>(() => (props.separators.match(/column|cell/) ? 'vdt-col--separators' : ''));
-
-watch(filters, (newFilters) => (processedRows.value = processRows(filterRows(newFilters, props.rows))), {
-  deep: true,
-});
-
-const globalFilter = ref();
-watch(globalFilter, (newFilter) => {
-  // use the original rows. if user backspaces from no rows filtered, it will still return no rows
-  processedRows.value = processRows(filterRows(newFilter, props.rows));
-});
-
-watch(sorters, () => (processedRows.value = processRows(sortRows(processedRows.value))), {
-  deep: true,
+  return rows;
 });
 
 function updateSorters(e: MouseEvent, field: string): void {
-  if (e.ctrlKey) {
-    // multi-sort key
-    if (!sorters.value[field]) {
-      // sorter doesn't exist, add to end
-      const curSortersNum = Object.keys(sorters.value).length;
-
-      sorters.value[field] = {
-        field: field,
-        dir: 'asc',
-        num: curSortersNum + 1,
-      };
-    } else {
-      // check direction
-      if (sorters.value[field]['dir'] === 'asc') {
-        // swap to des
-        sorters.value[field]['dir'] = 'des';
-      } else {
-        // remove sorter
-        delete sorters.value[field];
-      }
-    }
-  } else {
-    // check if current sorter is this field
-    if (!sorters.value[field]) {
-      // not current sorter, clear sorters & readd
-      sorters.value = {
-        [field]: {
-          field: field,
-          dir: 'asc',
-          num: 1,
-        },
-      };
-    } else {
-      // current sorter, check direction
-      if (sorters.value[field]['dir'] === 'asc') {
-        // swap to des
-        sorters.value[field]['dir'] = 'des';
-      } else {
-        // remove sorter
-        delete sorters.value[field];
-      }
-    }
-  }
+  sorters.value = handleSortUpdate(e.ctrlKey, field, sorters.value);
 }
 
-function sortRows(rows: any[]): any[] {
-  if (!Object.keys(sorters.value).length) return rows;
+const { handleFilterRows, handleGlobalFilter } = useFilter();
 
-  // sort by num in order, then convert fields into an array
-  // descending fields are prepended with a '-'
-  const fields = Object.values(sorters.value)
-    .sort((a, b) => a.num - b.num)
-    .map((sorter) => (sorter.dir === 'des' ? `-${sorter.field}` : sorter.field));
-
-  return rows.sort(multiSort(fields));
+function filterRows(filters: VFilter, rows: any[]): any[] {
+  // no filters, return original rows
+  if (!Object.keys(filters).length) return props.rows;
+  return handleFilterRows(filters, rows);
 }
 
-function multiSort(fields: string[]) {
-  const dir: number[] = [];
-  const len = fields.length;
-
-  fields = fields.map((o, i) => {
-    if (o[0] === '-') {
-      dir[i] = -1;
-      o = o.substring(1);
-    } else {
-      dir[i] = 1;
-    }
-    return o;
-  });
-
-  return (a: any, b: any): number => {
-    for (let i = 0; i < len; i++) {
-      const o = fields[i];
-      if (a[o] > b[o]) return dir[i];
-      if (a[o] < b[o]) return -dir[i];
-    }
-    return 0;
-  };
-}
-
-function pageRows(rows: any[]): any[] {
-  if (props.pagination === 0) return rows;
-  totalRowCount.value = 0;
-  let pagedRows: any[] = [];
-  for (let i = 0; i < rows.length; i += props.pagination) {
-    const sliced = rows.slice(i, i + props.pagination);
-    totalRowCount.value += sliced.length;
-    pagedRows.push(sliced);
-  }
-  return pagedRows;
-}
-
-function processRows(rows: any[]): any[] {
-  return pageRows(sortRows(filterRows(filters.value, rows)));
-}
-
-// const resizingCol = ref(false);
-// let curColEl: HTMLElement | null = null;
-// let curColResizing: VColumn | null = null;
-
-// let x = 0;
-// let diffX = 0;
-
-// function onColResizeStart(e: MouseEvent, col: VColumn) {
-//   if (!rootRef.value || resizingCol.value) return;
-//   e.preventDefault();
-
-//   resizingCol.value = true;
-//   x = e.clientX;
-//   curColResizing = col;
-//   curColEl = (e.target as HTMLElement).parentElement;
-
-//   document.addEventListener('mousemove', onColResizeMove);
-//   document.addEventListener('mouseup', onColResizeEnd);
-// }
-
-// const onColResizeMove = (e: MouseEvent) => {
-//   if (!(rootRef.value && resizerRef.value)) return;
-//   e.preventDefault();
-
-//   diffX = e.clientX - x;
-
-//   resizerRef.value.setAttribute(
-//     'style',
-//     `top: ${rootRef.value.offsetTop}px; height: ${rootRef.value.clientHeight}px; left: ${e.pageX}px; display:block;`
-//   );
-// };
-
-// const onColResizeEnd = () => {
-//   if (!(curColResizing && resizerRef.value && curColEl)) return;
-
-//   resizingCol.value = false;
-
-//   const colIdx = getColIdx(curColResizing.field);
-
-//   if (colIdx > -1) {
-//     columns.value[colIdx].width = curColEl.offsetWidth + diffX;
-//   }
-
-//   resizerRef.value.style.display = 'none';
-
-//   document.removeEventListener('mousemove', onColResizeMove);
-//   document.removeEventListener('mouseup', onColResizeEnd);
-// };
-
-function onColDragStart(e: DragEvent) {
-  const sourceCol = e.target as HTMLElement;
-  sourceCol.style.opacity = '0.4';
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text', sourceCol.getAttribute('field') as string);
-  }
-}
-
-function onColDrop(e: DragEvent) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const targetCol = getClosestColEl(e.target as HTMLElement);
-  if (!targetCol) return;
-
-  const data = e.dataTransfer?.getData('text');
-  const [srcField] = data?.split('~~');
-
-  const destField = targetCol.getAttribute('field');
-
-  if (!(srcField && destField)) return;
-
-  if (srcField !== destField) {
-    const srcColIdx = getColIdx(srcField);
-    const sourceCol = columns.value.splice(srcColIdx, 1);
-    const destColIdx = getColIdx(destField);
-
-    const colCenter = targetCol.offsetLeft + targetCol.offsetWidth / 2;
-
-    if (colCenter < e.clientX) {
-      // move after
-      columns.value.splice(destColIdx + 1, 0, sourceCol[0]);
-    } else {
-      columns.value.splice(destColIdx, 0, sourceCol[0]);
-    }
-  }
-
-  return;
-}
-
-function onColDragEnd(e: DragEvent) {
-  (e.target as HTMLElement).style.opacity = '1';
-
-  if (!(dropColIndicatorDown.value && dropColIndicatorUp.value)) return;
-  dropColIndicatorDown.value.style.display = 'none';
-  dropColIndicatorUp.value.style.display = 'none';
-}
-
-function onColDragOver(e: DragEvent) {
-  // fires off the element being hovered over
-  e.preventDefault(); // allows dropping
-
-  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-
-  if (!(dropColIndicatorDown.value && dropColIndicatorUp.value)) return;
-
-  const targetCol = getClosestColEl(e.target as HTMLElement);
-  if (!targetCol) return;
-
-  const { top, left } = getOffset(targetCol);
-  const colWidth = targetCol.offsetWidth;
-  const colCenter = left + colWidth / 2;
-  const colHeight = targetCol.clientHeight;
-
-  const iconHeight = dropColIndicatorDown.value.clientHeight / 2;
-  const iconWidth = dropColIndicatorDown.value.clientWidth / 2;
-
-  const iconLeftLocation = left - iconWidth + 'px';
-  const iconRightLocation = left + colWidth - iconWidth + 'px';
-  const iconDownTop = top - iconHeight;
-  const iconUpTop = top + colHeight - iconHeight;
-
-  if (colCenter < e.clientX) {
-    // place indicators to right of targetCol
-    dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconRightLocation}`);
-    dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconRightLocation}`);
-  } else {
-    // place indicators to left of targetCol
-    dropColIndicatorDown.value.setAttribute('style', `top: ${iconDownTop}px;left:${iconLeftLocation}`);
-    dropColIndicatorUp.value.setAttribute('style', `top: ${iconUpTop}px;left:${iconLeftLocation}`);
-  }
-
-  dropColIndicatorDown.value.style.display = 'block';
-  dropColIndicatorUp.value.style.display = 'block';
-  return;
-}
-
-const getColIdx = (name: string): number => columns.value.findIndex((col) => col.name === name);
-
-const getClosestColEl = (target: HTMLElement): HTMLElement | null => target.closest('.vdt-th');
-
-function getOffset(target: HTMLElement): { top: number; left: number } {
-  return { top: target.offsetTop, left: target.offsetLeft };
-}
+const colWidths = computed(() => {
+  let width = 0;
+  processedColumns.value.map((col: any) => (width += col.width || 150));
+  return width;
+});
 </script>
 
 <style>
-.vdt-row--separators {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-}
-.vdt-col--separators {
-  border-right: 1px solid rgba(255, 255, 255, 0.6);
-}
-.clickable {
+.vdt--clickable {
   cursor: pointer;
 }
-.vdt--resizer {
-  width: 1px;
-  position: absolute;
-  z-index: 10;
-  display: none;
-  border: 1px solid var(--q-accent);
+.vdt--root-paged {
+  overflow: auto;
 }
-.vdt-th--expand,
-.vdt-th--selection,
-.vdt-td--selection {
-  width: 60px;
-}
-</style>
-
-<style lang="scss" scoped>
-.vdt-container {
-  position: relative;
-}
-.vdt-table {
-  border: 1px solid rgba(255, 255, 255, 0.6);
-}
-.vdt--drop-indicator {
-  position: absolute;
-  display: none;
-  font-size: 2rem;
-  z-index: 100;
-}
-.vdt-top {
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  padding: 10px 10px 5px 10px;
-}
-.vdt-top--title {
-  font-size: 1.5em;
-}
-.vdt-bottom {
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  padding: 5px 10px 10px 10px;
-  display: flex;
-}
-.vdt-hdr-filter {
-  padding: 5px;
-}
-.vdt-global-filter-input {
-  margin-left: 5px;
-  margin-right: 5px;
+.vdt--root-paged .vdt--thead-container {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--q-dark-page);
 }
 .vdt-loading {
   position: absolute;
@@ -662,12 +404,283 @@ function getOffset(target: HTMLElement): { top: number; left: number } {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1;
+  z-index: 5;
+}
+.vdt-global-filter-input {
+  padding: 5px;
+}
+.vdt--clickable {
+  cursor: pointer;
+}
+.vdt--table-border {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+.vdt--root-wrapper {
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.vdt--resizer {
+  width: 1px;
+  position: absolute;
+  z-index: 10;
+  top: 0px;
+  display: none;
+  border: 1px solid var(--q-accent);
+}
+.vdt--column-drop-wrapper {
+  display: flex;
+}
+.vdt--drop-indicator {
+  position: absolute;
+  display: none;
+  font-size: 2rem;
+  z-index: 100;
+}
+.vdt-top {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 10px 10px 5px 10px;
+}
+.vdt-top--title {
+  font-size: 1.5em;
+}
+.vdt--root-wrapper-body {
+  flex: 1 1 auto;
+  height: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+.vdt--root {
+  height: 100%;
+  overflow: hidden;
+  flex: 1 1 auto;
+  width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+/* .vdt--thead-wrapper {
+  flex-direction: row;
+  background-color: var(--q-dark);
+  display: flex;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+} */
+.vdt--thead {
+  position: relative;
+  height: 100%;
+  /* min-width: 0px;
+  overflow: hidden;
+  flex: 1 1 auto; */
+}
+.vdt--thead-container {
+  position: relative;
+  height: 100%;
+  white-space: nowrap;
+}
+.vdt--thead-tr {
+  font-weight: 700;
+  overflow: hidden;
+  display: flex;
+}
+.vdt--thead-filters {
+  overflow: hidden;
+}
+.vdt--row-highlight .vdt--row:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+.vdt--striped-rows .vdt--row-odd {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.vdt--cell-borders .vdt--th,
+.vdt--cell-borders .vdt--cell,
+.vdt--cell-borders .vdt--row > * {
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
+}
+.vdt--row-borders .vdt--row,
+.vdt--thead-wrapper,
+.vdt--thead-tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+}
+.vdt--th,
+.vdt--cell {
+  position: relative;
+  padding: 5px;
+}
+.vdt--th {
+  /* flex-direction: column;
+  display: inline-flex; */
+  /* height: 100%; */
+  overflow: hidden;
+}
+.vdt--th-extra,
+.vdt--cell-extra {
+  width: 60px;
+  text-align: center;
+}
+.vdt--th-filter {
+  padding: 5px;
+}
+.vdt--th-resizer {
+  display: block;
+  position: absolute !important;
+  top: 0;
+  right: 0;
+  margin: 0;
+  width: 0.5rem;
+  height: 100%;
+  padding: 0px;
+  cursor: col-resize;
+  border: 1px solid transparent;
+}
+/* .vdt--th-cell-wrapper {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+}
+.vdt--th-label-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  padding: 5px;
+} */
+.vdt--th-label {
+  display: flex;
+  flex: 1 1 auto;
+  overflow: hidden;
+  align-items: center;
+  text-overflow: ellipsis;
+}
+.vdt--th-label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vdt--tbody {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  min-height: 0;
+}
+.vdt--tbody-clipper {
+  overflow: hidden;
+  min-width: 0px;
+  flex: 1 1 auto;
+  height: 100%;
+}
+.vdt--tbody-viewport {
+  flex-direction: row;
+  position: relative;
+  height: 100%;
+  width: calc(100% + 15px);
+  min-width: 0px;
+  overflow: hidden;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+.vdt--tbody-container {
+  /* display: block; */
+  position: relative;
+}
+.vdt--row {
+  transition: background-color 0.1s;
+  white-space: nowrap;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.vdt--row-selected {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.vdt--row-inner {
+  display: flex;
+}
+.vdt--cell,
+.vdt--th,
+.vdt--row-inner > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  white-space: nowrap;
+  /* height: 100%; */
+  /* padding: 5px; */
+}
+.vdt--row-expanded {
+  padding-left: 60px;
+}
+.vdt--tbody-hscroll {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  position: relative;
+}
+.vdt--tbody-vscroll-viewport {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  overflow-y: scroll;
+  flex: 1 1 auto;
+}
+.vdt--tbody-vscroll-container {
+  /* width: 100%; */
+  position: relative;
+}
+.vdt--tbody-hscroll {
+  flex-direction: row;
+  width: 100%;
+}
+.vdt--tbody-hscroll-lspacer,
+.vdt--tbody-hscroll-rspacer {
+  height: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+.vdt--tbody-hscroll-viewport {
+  position: relative;
+  height: 100%;
+  min-width: 0px;
+  overflow: hidden;
+  overflow-x: scroll;
+  flex: 1 1 auto;
+}
+.vdt--tbody-hscroll-container {
+  height: 100%;
+  position: relative;
 }
 .vdt-no-data {
   padding: 10px;
 }
+.vdt-bottom {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 5px 10px 10px 10px;
+  display: flex;
+}
 .vdt-bottom-spacer {
   flex-grow: 1;
+}
+.vdt--thead,
+.vdt--thead-tr,
+.vdt--th,
+.vdt--tbody-container,
+.vdt--row,
+.vdt--cell,
+.vdt--root-paged {
+  border-collapse: collapse;
+}
+.vdt--thead,
+.vdt--tbody-container,
+.vdt--root-paged {
+  table-layout: fixed;
 }
 </style>

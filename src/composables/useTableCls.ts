@@ -5,8 +5,8 @@ export default function useTableCls(props) {
     if (props.borders === 'none') return '';
 
     const cls = [];
-    if (props.borders.match(/both|cell/)) cls.push('vdt--cell-borders');
-    if (props.borders.match(/both|row/)) cls.push('vdt--row-borders');
+    if (props.borders.match(/column|cell/)) cls.push('vdt--cell-borders');
+    if (props.borders.match(/row|cell/)) cls.push('vdt--row-borders');
 
     return cls.join(' ');
   });

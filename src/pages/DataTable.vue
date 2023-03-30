@@ -1,5 +1,57 @@
 <template>
-  <div class="q-pa-md">
+  <div class="q-pa-md q-gutter-y-lg">
+    <!-- <div>
+      <div class="text-h5">Query Fields</div>
+      <div class="row q-gutter-x-md">
+        <q-input :style="{ width: '100px' }" label="Label" :model-value="''" filled dense />
+        <q-input :style="{ width: '120px' }" label="Label" :model-value="''" filled dense />
+        <q-input :style="{ width: '100px' }" label="Label" :model-value="''" filled dense />
+        <q-input :style="{ width: '130px' }" label="Label" :model-value="''" filled dense />
+        <q-input :style="{ width: '180px' }" label="Label" :model-value="''" filled dense />
+        <q-input label="Label" :model-value="''" filled dense />
+        <q-input label="Label" :model-value="''" filled dense />
+      </div>
+    </div>
+
+    <div class="row q-gutter-x-lg">
+      <div class="column">
+        <div class="text-h5">Query Fields</div>
+        <div class="row q-gutter-x-md">
+          <q-input :style="{ width: '150px' }" label="Label" :model-value="''" filled dense />
+          <q-input :style="{ width: '150px' }" label="Label" :model-value="''" filled dense />
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="text-h5">Query Fields</div>
+        <div class="row q-gutter-x-md">
+          <q-input :style="{ width: '120px' }" label="Label" :model-value="''" filled dense />
+          <q-input :style="{ width: '120px' }" label="Label" :model-value="''" filled dense />
+          <q-input :style="{ width: '100px' }" label="Label" :model-value="''" filled dense />
+          <q-input label="Label" :style="{ width: '80px' }" :model-value="''" filled dense />
+        </div>
+      </div>
+    </div>
+
+    <div class="row q-gutter-x-md">
+      <q-checkbox :model-value="false" label="Show Bad" dense />
+      <q-checkbox :model-value="false" label="Show Unprocessed" dense />
+    </div>
+
+    <div>
+      <div class="text-h5">Date Range</div>
+      <div class="row q-gutter-x-md">
+        <q-input label="Start" :model-value="''" filled dense :rules="[(val) => !!val || 'Error']" />
+        <q-input label="End" :model-value="''" filled dense :rules="[(val) => !!val || 'Error']" />
+      </div>
+    </div>
+
+    <div class="row q-gutter-x-md">
+      <q-btn color="positive" label="Submit" />
+      <q-btn color="negative" flat label="Reset" />
+      <q-input :style="{ width: '200px' }" label="Label" :model-value="''" filled dense />
+    </div> -->
+
     <DataTable
       :rows="rows"
       :columns="columns1"
@@ -10,8 +62,15 @@
       wrap-cells="wrap"
       :loading="loading"
       :height="500"
-      borders="both"
+      borders="cell"
       bordered
+      selection="multiple"
+      row-key="_id"
+      :pagination="{
+        rowsPerPage: 20,
+        initialPage: 5,
+        pageOptions: [0, 10, 20, 30, 50],
+      }"
     >
     </DataTable>
   </div>
@@ -19,8 +78,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import DataTable from 'src/components/dataTable2/DataTable.vue';
-import { VColumn } from 'src/components/DataTable/types';
+import DataTable from 'src/components/DataTable/DataTable.vue';
+import { VColumn } from 'src/components/types';
 import data from 'src/generated.json';
 
 const loading = ref(false);

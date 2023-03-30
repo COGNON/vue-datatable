@@ -1,103 +1,91 @@
 <template>
-  <table :class="`vdt-thead ${rowSeparatorCls}`" role="presentation">
-    <thead>
-      <tr>
-        <th v-if="selection !== 'none'" :class="`vdt-th vdt-th--selection vdt-cell--extra ${colSeparatorCls}`">
-          <slot name="header-cell-selection">
-            <q-checkbox
-              v-if="selection === 'multiple'"
-              v-model="allSelected"
-              @update:model-value="(val) => $emit('onSelectAll', val)"
-            />
-          </slot>
-        </th>
+  <thead class="vdt--thead-container" :style="theadContainerStyle">
+    <tr class="vdt--thead-tr">
+      <th v-if="selection !== 'none'" class="vdt--th vdt--th-extra">
+        <slot name="header-selection" :all-selected="allSelected" :select-all="selectAll">
+          <q-checkbox
+            v-if="selection === 'multiple'"
+            :model-value="allSelected"
+            dense
+            @update:model-value="selectAll"
+          />
+        </slot>
+      </th>
+      <th v-if="$slots['expanded']" class="vdt--th vdt--th-extra" />
 
-        <div v-if="$slots['expanded']" :class="`vdt-th vdt-td--expand ${colSeparatorCls}`" />
-
-        <template v-for="col in columns" :key="col.field">
-          <header-cell
-            :column="col"
-            :class="`vdt-th ${colSeparatorCls}`"
-            :sorter="sorters[col.name]"
-            :resizable-columns="resizableColumns"
-            :field="col.field"
-            :draggable="true"
-            @update-sorter="(e) => $emit('updateSorter', e, col.name)"
-            @on-resize-start="(e) => $emit('onResizeStart', e, col)"
-            @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
-            @dragend="(e:DragEvent) => $emit('onDragEnd', e)"
-            @dragover="(e:DragEvent) => $emit('onDragOver', e)"
-            @drop="(e:DragEvent) => $emit('onDrop',e)"
-          >
-            <template v-if="$slots[`header-cell-${col.field}`]" #header-cell>
-              <slot :name="`header-cell-${col.field}`" />
-            </template>
-            <template v-else-if="$slots['header-cell']" #header-cell>
-              <slot name="header-cell" />
-            </template>
-
-            <template #filter>
-              <slot name="filter" :col="col" />
-            </template>
-          </header-cell>
+      <header-cell
+        v-for="(col, colIdx) in columns"
+        :key="col.name"
+        :col="col"
+        :aria-colindex="colIdx + 1"
+        :style="{ width: `${col.width}px` }"
+        :resizable-columns="resizableColumns"
+        :draggable="reorderableColumns ? true : null"
+        :sorters="sorters"
+        @update-sorter="(e) => $emit('updateSorter', e, col.name)"
+        @on-resize-start="(e: MouseEvent) => $emit('onResizeStart', e, col)"
+        @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
+        v-on="reorderableColumns ? {
+              dragend: (e:DragEvent) => $emit('onDragEnd', e),
+              dragover: (e:DragEvent) => $emit('onDragOver', e),
+              drop: (e:DragEvent) => $emit('onDrop',e)
+            } : {}"
+      >
+        <!-- specific header cell slot takes precedence -->
+        <template v-if="$slots[`header-cell-${col.name}`]" #header-cell="slotProps">
+          <slot :name="`header-cell-${col.name}`" v-bind="slotProps" :col-index="colIdx" />
         </template>
-      </tr>
-    </thead>
-  </table>
+        <template v-else-if="$slots['header-cell']" #header-cell="slotProps">
+          <slot name="header-cell" v-bind="slotProps" :col-index="colIdx" />
+        </template>
+
+        <template #filter>
+          <filter-cell
+            v-if="colIdx !== 1"
+            :col="col"
+            :filter="filters[col.name] || ''"
+            @update:model-value="(val) => $emit('updateFilter', col.field, val)"
+          />
+        </template>
+      </header-cell>
+    </tr>
+  </thead>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { SelectedRow, SelectionModes, VColumn, VSorter } from './types';
+import { computed } from 'vue';
+import { VColumn, VFilter, VSorter, VSelectionModes } from '../types';
 import HeaderCell from './HeaderCell.vue';
+import FilterCell from './FilterCell.vue';
 
-interface VHeaderProps {
+const props = defineProps<{
+  scrollLeft: number;
   columns: VColumn[];
-  rowSeparatorCls: string;
-  colSeparatorCls: string;
-  sorters: VSorter;
-  reorderableColumns: boolean;
+  rowHeight: number;
   resizableColumns: boolean;
-  selection: SelectionModes;
-  selectedRows: SelectedRow;
-  rowNumber: number;
-}
+  reorderableColumns: boolean;
+  sorters: VSorter[];
+  filters: VFilter;
+  selection: VSelectionModes;
+  selected: any[];
+  totalRowCount: number;
+}>();
 
-const props = defineProps<VHeaderProps>();
-
-defineEmits<{
+const emit = defineEmits<{
   (e: 'updateSorter', event: MouseEvent, field: string): void;
+  (e: 'updateFilter', field: string, val: string | null): void;
   (e: 'onResizeStart', event: MouseEvent, col: VColumn): void;
   (e: 'onDragStart', event: DragEvent): void;
   (e: 'onDragEnd', event: DragEvent): void;
   (e: 'onDragOver', event: DragEvent): void;
   (e: 'onDrop', event: DragEvent): void;
-  (e: 'onSelectAll', checked: boolean): void;
+  (e: 'selectAll', selected: boolean): void;
 }>();
 
-const allSelected = ref(false);
-watch(
-  () => props.selectedRows,
-  (newSelected) =>
-    newSelected && Object.keys(newSelected).length === props.rowNumber ? (allSelected.value = true) : null
-);
-</script>
+const theadContainerStyle = computed(() => {
+  return { transform: `translateX(${-props.scrollLeft}px)` };
+});
 
-<style lang="scss" scoped>
-.vdt-thead {
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  width: fit-content;
-  background-color: var(--q-dark-page);
-}
-.vdt-th {
-  padding: 5px;
-  display: inline-block;
-}
-.vdt-th--selection {
-  text-align: center;
-  vertical-align: middle;
-}
-</style>
+const allSelected = computed(() => props.selected.length === props.totalRowCount);
+const selectAll = (val: boolean) => emit('selectAll', val);
+</script>
