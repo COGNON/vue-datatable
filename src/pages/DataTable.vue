@@ -69,6 +69,9 @@
       :pagination="pagination"
     >
       <template #expanded>Test</template>
+      <template #bottom>
+        <q-select v-model="pagination.rowsPerPage" :options="[0, 20, 50, 100]" />
+      </template>
     </DataTable>
   </div>
 </template>

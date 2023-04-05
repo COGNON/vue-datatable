@@ -4,13 +4,15 @@
       v-for="(row, rowIdx) in rows"
       :key="rowIdx"
       :row="row"
-      :row-index="rowIdx + (virtualStartIsOdd ? 1 : 0)"
+      :row-index="rowIdx + virtualStartNode"
       :columns="columns"
       :row-height="rowHeight"
       :selection="selection"
       :selected="selected[row[rowKey]] || false"
+      :expanded="expandedRows[rowIdx + virtualStartNode] || false"
       @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
       @update-selected="$emit('updateSelected', row)"
+      @update-expanded="(idx) => $emit('updateExpanded', idx)"
     >
       <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
         <slot
@@ -24,26 +26,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { VSelectedRow, VSelectionModes, VColumn } from '../types';
 import TableRow from './TableRow.vue';
 
-const props = defineProps<{
+defineProps<{
   rows: any[];
   columns: VColumn[];
   rowHeight: number;
   colWidths: number;
-  virtualStartNode?: number;
+  virtualStartNode: number;
   selection: VSelectionModes;
   selected: VSelectedRow;
   rowKey: string;
+  expandedRows: VSelectedRow;
 }>();
 
 defineEmits<{
   (e: 'updateExpandedHeight', changeHeight: number): void;
   (e: 'updateSelected', row: any): void;
+  (e: 'updateExpanded', index: number): void;
 }>();
-
-// prevents striped rows from shifting as the virtual scroller moves by baselining the row index as if the count starts from 0
-const virtualStartIsOdd = computed(() => props.virtualStartNode || 0 % 2 > 0);
 </script>

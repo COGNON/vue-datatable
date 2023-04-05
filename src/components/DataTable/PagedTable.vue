@@ -3,7 +3,7 @@
     <div class="vdt--tbody-clipper" role="presentation">
       <div ref="tbodyScrollRef" class="vdt--tbody-viewport" role="presentation">
         <table class="vdt--tbody-container" :style="tbodyContainerStyle">
-          <slot :paged-rows="rows[currentPage]" />
+          <slot :paged-rows="rows[currentPage]" :start-node="currentPage * pagination.rowsPerPage" />
         </table>
       </div>
     </div>
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { VColumn, VPagination } from '../types';
 import FakeVerticalScroll from './FakeVerticalScroll.vue';
 import useVirtualScroll from 'src/composables/useVirtualScroll';

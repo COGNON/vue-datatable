@@ -74,14 +74,14 @@
 
         <paged-table
           v-if="pagination.rowsPerPage && processedRows.length"
-          v-slot="{ pagedRows }"
+          v-slot="{ pagedRows, startNode }"
           :rows="processedRows"
           :columns="processedColumns"
           :row-height="rowHeight"
           :col-widths="colWidths"
           :root-height="rootHeight"
           :scroll-left="scrollLeft"
-          :expanded-row-height="expandedRowHeightPerPage[currentPage] || 0"
+          :expanded-row-height="expandedRowHeight[currentPage] || 0"
           :pagination="pagination"
           :current-page="currentPage"
         >
@@ -94,8 +94,11 @@
             :selection="selection"
             :selected="selectedByKey"
             :row-key="rowKey"
-            @update-expanded-height="handleExpandedRowHeightPaged"
+            :virtual-start-node="startNode"
+            :expanded-rows="expandedRows"
+            @update-expanded-height="handleExpandedRowHeight"
             @update-selected="updateSelected"
+            @update-expanded="updateExpanded"
           >
             <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
               <slot
@@ -118,7 +121,7 @@
           :col-widths="colWidths"
           :scroll-left="scrollLeft"
           :striped-rows="stripedRows"
-          :expanded-row-height="expandedRowHeight"
+          :expanded-row-height="expandedRowHeight[0] || 0"
         >
           <table-body
             v-if="virtualRows.length"
@@ -130,8 +133,10 @@
             :selection="selection"
             :selected="selectedByKey"
             :row-key="rowKey"
-            @update-expanded-height="(val) => (expandedRowHeight += val)"
+            :expanded-rows="expandedRows"
+            @update-expanded-height="(val) => (expandedRowHeight[0] += val)"
             @update-selected="updateSelected"
+            @update-expanded="updateExpanded"
           >
             <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
               <slot
@@ -198,6 +203,7 @@ import useColMove from 'src/composables/useColMove';
 import useTableCls from 'src/composables/useTableCls';
 import useRowSelect from 'src/composables/useRowSelect';
 import usePagination from 'src/composables/usePagination';
+import useExpandedRows from 'src/composables/useExpandedRows';
 
 interface Props {
   columns: VColumn[];
@@ -252,14 +258,13 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const scrollLeft = ref(0);
-const expandedRowHeight = ref(0);
 
-const expandedRowHeightPerPage = ref<number[]>([]);
-function handleExpandedRowHeightPaged(height: number) {
-  if (!expandedRowHeightPerPage.value[currentPage.value]) {
-    expandedRowHeightPerPage.value[currentPage.value] = Math.max(height, 0);
+const { expandedRows, expandedRowHeight, updateExpanded } = useExpandedRows();
+function handleExpandedRowHeight(height: number) {
+  if (!expandedRowHeight.value[currentPage.value || 0]) {
+    expandedRowHeight.value[currentPage.value || 0] = Math.max(height, 0);
   } else {
-    expandedRowHeightPerPage.value[currentPage.value] += height;
+    expandedRowHeight.value[currentPage.value || 0] += height;
   }
 }
 
