@@ -37,10 +37,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { VSelectionModes, VColumn } from '../types';
 import BodyCell from './BodyCell.vue';
-import useExpandRow from 'src/composables/useExpandRow';
 
 const props = defineProps<{
   row: any;
@@ -49,15 +48,21 @@ const props = defineProps<{
   rowHeight: number;
   selection: VSelectionModes;
   selected: boolean;
+  expanded: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'updateExpandedHeight', changeHeight: number): void;
   (e: 'updateSelected'): void;
+  (e: 'updateExpanded', index: number): void;
 }>();
 
-const { expandRef, expandedHeight, expanded, expandIcon, expandRow } = useExpandRow();
-watch(expandedHeight, (newH, oldH) => emit('updateExpandedHeight', expanded.value ? newH : -oldH));
+const expandRow = () => emit('updateExpanded', props.rowIndex);
+const expandRef = ref<HTMLElement | undefined>();
+const expandIcon = computed(() => (props.expanded ? 'mdi-minus' : 'mdi-plus'));
+
+const expandedHeight = computed(() => expandRef.value?.clientHeight || 0);
+watch(expandedHeight, (newH, oldH) => emit('updateExpandedHeight', props.expanded ? newH : -oldH));
 
 const actualRowHeight = computed(() => props.rowHeight + expandedHeight.value);
 
