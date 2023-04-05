@@ -32,6 +32,5 @@ export type VSelectedRow = {
 
 export type VPagination = {
   rowsPerPage: number;
-  pageOptions?: number[];
   initialPage?: number;
 };

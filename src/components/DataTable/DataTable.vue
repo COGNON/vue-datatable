@@ -31,69 +31,6 @@
       </slot>
     </div>
 
-    <div
-      v-if="pagination.rowsPerPage && processedRows.length"
-      class="vdt--root-paged"
-      :class="`${cellBorderCls} ${hoverCls} ${stripedCls}`"
-      :style="{ height: `${rootHeight}px` }"
-    >
-      <table class="vdt--table-paged">
-        <table-header
-          :columns="processedColumns"
-          :col-widths="colWidths"
-          :scroll-left="scrollLeft"
-          :row-height="rowHeight"
-          :resizable-columns="resizableColumns"
-          :reorderable-columns="reorderableColumns"
-          :sorters="sorters"
-          :filters="filters"
-          :style="{ width: `${colWidths}px` }"
-          :selection="selection"
-          :selected="selected"
-          :total-row-count="rows.length"
-          @update-sorter="updateSorters"
-          @update-filter="updateFilter"
-          @on-resize-start="onColResizeStart"
-          @on-drag-start="onColDragStart"
-          @on-drag-end="onColDragEnd"
-          @on-drag-over="onColDragOver"
-          @on-drop="handleColDrop"
-          @select-all="onSelectAll"
-        >
-          <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
-            <slot
-              v-if="String(slotName).startsWith('header') || String(slotName).startsWith('expanded')"
-              :name="slotName"
-              v-bind="slotProps || {}"
-            />
-          </template>
-        </table-header>
-        <table-body
-          v-if="processedRows.length"
-          :rows="processedRows[currentPage]"
-          :columns="processedColumns"
-          :row-height="rowHeight"
-          :col-widths="colWidths"
-          :selection="selection"
-          :selected="selectedByKey"
-          :row-key="rowKey"
-          @update-expanded-height="(val) => (expandedRowHeight += val)"
-          @update-selected="updateSelected"
-        >
-          <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
-            <slot
-              v-if="String(slotName).startsWith('body') || String(slotName).startsWith('expanded')"
-              :name="slotName"
-              v-bind="slotProps || {}"
-            />
-          </template>
-        </table-body>
-        <div v-else class="vdt-no-data">
-          <slot name="noData">{{ noDataText }}</slot>
-        </div>
-      </table>
-    </div>
-
     <div v-else class="vdt--root-wrapper-body" role="presentation">
       <div
         class="vdt--root"
@@ -116,6 +53,7 @@
           :selection="selection"
           :selected="selected"
           :total-row-count="rows.length"
+          :class="pagination ? 'vdt--thead-pagination' : ''"
           @update-sorter="updateSorters"
           @update-filter="updateFilter"
           @on-resize-start="onColResizeStart"
@@ -134,7 +72,43 @@
           </template>
         </table-header>
 
+        <paged-table
+          v-if="pagination.rowsPerPage && processedRows.length"
+          v-slot="{ pagedRows }"
+          :rows="processedRows"
+          :columns="processedColumns"
+          :row-height="rowHeight"
+          :col-widths="colWidths"
+          :root-height="rootHeight"
+          :scroll-left="scrollLeft"
+          :expanded-row-height="expandedRowHeightPerPage[currentPage] || 0"
+          :pagination="pagination"
+          :current-page="currentPage"
+        >
+          <table-body
+            v-if="processedRows.length"
+            :rows="pagedRows"
+            :columns="processedColumns"
+            :row-height="rowHeight"
+            :col-widths="colWidths"
+            :selection="selection"
+            :selected="selectedByKey"
+            :row-key="rowKey"
+            @update-expanded-height="handleExpandedRowHeightPaged"
+            @update-selected="updateSelected"
+          >
+            <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+              <slot
+                v-if="String(slotName).startsWith('body') || String(slotName).startsWith('expanded')"
+                :name="slotName"
+                v-bind="slotProps || {}"
+              />
+            </template>
+          </table-body>
+        </paged-table>
+
         <virtual-scroller
+          v-else
           v-slot="{ virtualRows, startNode }"
           :rows="processedRows"
           :columns="processedColumns"
@@ -183,11 +157,11 @@
     </div>
 
     <div
-      v-if="!hideTableBottom && ($slots.bottom || selection !== 'none' || pagination.rowsPerPage)"
+      v-if="!hideTableBottom && ($slots.bottom || selection === 'multiple' || pagination.rowsPerPage)"
       class="vdt-bottom"
     >
       <slot name="bottom">
-        <div v-if="selected.length">{{ selected.length }} selected</div>
+        <div>{{ selected.length }} selected</div>
       </slot>
 
       <div class="vdt-bottom-spacer" />
@@ -214,6 +188,7 @@ import { VColumn, VFilter, VSorter, VSelectionModes, VCellSeparators, VPaginatio
 import TableHeader from './TableHeader.vue';
 import FakeHorizontalScroll from './FakeHorizontalScroll.vue';
 import VirtualScroller from './VirtualScroller.vue';
+import PagedTable from './PagedTable.vue';
 import TableBody from './TableBody.vue';
 import TablePaginator from './TablePaginator.vue';
 import useSorter from 'src/composables/useSorter';
@@ -279,6 +254,15 @@ const props = withDefaults(defineProps<Props>(), {
 const scrollLeft = ref(0);
 const expandedRowHeight = ref(0);
 
+const expandedRowHeightPerPage = ref<number[]>([]);
+function handleExpandedRowHeightPaged(height: number) {
+  if (!expandedRowHeightPerPage.value[currentPage.value]) {
+    expandedRowHeightPerPage.value[currentPage.value] = Math.max(height, 0);
+  } else {
+    expandedRowHeightPerPage.value[currentPage.value] += height;
+  }
+}
+
 const { currentPage, totalRowCount, pageRows } = usePagination(props);
 const { selected, selectedByKey, updateSelected, onSelectAll } = useRowSelect(props);
 const { cellBorderCls, tableBorderCls, hoverCls, stripedCls } = useTableCls(props);
@@ -311,6 +295,7 @@ const {
   onColDragEnd,
   onColDrop,
 } = useColMove();
+
 function handleColDrop(e: DragEvent) {
   processedColumns.value = onColDrop(e, processedColumns.value);
 }
@@ -387,15 +372,6 @@ const colWidths = computed(() => {
 .vdt--clickable {
   cursor: pointer;
 }
-.vdt--root-paged {
-  overflow: auto;
-}
-.vdt--root-paged .vdt--thead-container {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: var(--q-dark-page);
-}
 .vdt-loading {
   position: absolute;
   background-color: rgba(0, 0, 0, 0.6);
@@ -406,11 +382,9 @@ const colWidths = computed(() => {
   align-items: center;
   z-index: 5;
 }
-.vdt-global-filter-input {
+.vdt-global-filter-input,
+.vdt--th-filter {
   padding: 5px;
-}
-.vdt--clickable {
-  cursor: pointer;
 }
 .vdt--table-border {
   border: 1px solid rgba(255, 255, 255, 0.8);
@@ -453,42 +427,33 @@ const colWidths = computed(() => {
   display: flex;
   flex-direction: row;
 }
-.vdt--root {
+.vdt--root,
+.vdt--thead,
+.vdt--thead-container,
+.vdt--tbody-hscroll-container,
+.vdt--tbody-hscroll-viewport {
+  position: relative;
   height: 100%;
+}
+.vdt--thead-pagination {
+  height: auto;
+}
+.vdt--root {
   overflow: hidden;
   flex: 1 1 auto;
   width: 0;
-  position: relative;
   display: flex;
   flex-direction: column;
 }
-/* .vdt--thead-wrapper {
-  flex-direction: row;
-  background-color: var(--q-dark);
-  display: flex;
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  position: relative;
-} */
-.vdt--thead {
-  position: relative;
-  height: 100%;
-  /* min-width: 0px;
-  overflow: hidden;
-  flex: 1 1 auto; */
-}
 .vdt--thead-container {
-  position: relative;
-  height: 100%;
   white-space: nowrap;
 }
 .vdt--thead-tr {
   font-weight: 700;
-  overflow: hidden;
   display: flex;
 }
-.vdt--thead-filters {
+.vdt--thead-filters,
+.vdt--thead-tr {
   overflow: hidden;
 }
 .vdt--row-highlight .vdt--row:hover {
@@ -499,7 +464,7 @@ const colWidths = computed(() => {
 }
 .vdt--cell-borders .vdt--th,
 .vdt--cell-borders .vdt--cell,
-.vdt--cell-borders .vdt--row > * {
+.vdt--row-expanded {
   border-right: 1px solid rgba(255, 255, 255, 0.6);
 }
 .vdt--row-borders .vdt--row,
@@ -513,18 +478,12 @@ const colWidths = computed(() => {
   padding: 5px;
 }
 .vdt--th {
-  /* flex-direction: column;
-  display: inline-flex; */
-  /* height: 100%; */
   overflow: hidden;
 }
 .vdt--th-extra,
 .vdt--cell-extra {
   width: 60px;
   text-align: center;
-}
-.vdt--th-filter {
-  padding: 5px;
 }
 .vdt--th-resizer {
   display: block;
@@ -538,41 +497,25 @@ const colWidths = computed(() => {
   cursor: col-resize;
   border: 1px solid transparent;
 }
-/* .vdt--th-cell-wrapper {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  overflow: hidden;
-}
-.vdt--th-label-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  padding: 5px;
-} */
-.vdt--th-label {
-  display: flex;
-  flex: 1 1 auto;
-  overflow: hidden;
-  align-items: center;
-  text-overflow: ellipsis;
-}
+.vdt--th-label,
 .vdt--th-label-text {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.vdt--th-label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
 }
 .vdt--tbody {
   position: relative;
   display: flex;
   flex: 1 1 auto;
   flex-direction: row;
-  min-height: 0;
+  min-height: 0px;
 }
-.vdt--tbody-clipper {
+.vdt--tbody-clipper,
+.vdt--tbody-viewport {
   overflow: hidden;
   min-width: 0px;
   flex: 1 1 auto;
@@ -581,16 +524,8 @@ const colWidths = computed(() => {
 .vdt--tbody-viewport {
   flex-direction: row;
   position: relative;
-  height: 100%;
   width: calc(100% + 15px);
-  min-width: 0px;
-  overflow: hidden;
   overflow-y: auto;
-  flex: 1 1 auto;
-}
-.vdt--tbody-container {
-  /* display: block; */
-  position: relative;
 }
 .vdt--row {
   transition: background-color 0.1s;
@@ -612,8 +547,6 @@ const colWidths = computed(() => {
   text-overflow: ellipsis;
   display: inline-block;
   white-space: nowrap;
-  /* height: 100%; */
-  /* padding: 5px; */
 }
 .vdt--row-expanded {
   padding-left: 60px;
@@ -632,8 +565,8 @@ const colWidths = computed(() => {
   overflow-y: scroll;
   flex: 1 1 auto;
 }
-.vdt--tbody-vscroll-container {
-  /* width: 100%; */
+.vdt--tbody-vscroll-container,
+.vdt--tbody-container {
   position: relative;
 }
 .vdt--tbody-hscroll {
@@ -647,16 +580,10 @@ const colWidths = computed(() => {
   overflow-x: hidden;
 }
 .vdt--tbody-hscroll-viewport {
-  position: relative;
-  height: 100%;
   min-width: 0px;
   overflow: hidden;
   overflow-x: scroll;
   flex: 1 1 auto;
-}
-.vdt--tbody-hscroll-container {
-  height: 100%;
-  position: relative;
 }
 .vdt-no-data {
   padding: 10px;
