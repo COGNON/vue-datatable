@@ -66,12 +66,9 @@
       bordered
       selection="multiple"
       row-key="_id"
-      :pagination="{
-        rowsPerPage: 20,
-        initialPage: 5,
-        pageOptions: [0, 10, 20, 30, 50],
-      }"
+      :pagination="pagination"
     >
+      <template #expanded>Test</template>
     </DataTable>
   </div>
 </template>
@@ -83,6 +80,10 @@ import { VColumn } from 'src/components/types';
 import data from 'src/generated.json';
 
 const loading = ref(false);
+const pagination = ref({
+  rowsPerPage: 20,
+  initialPage: 5,
+});
 
 const rows = ref(data);
 const columns1: VColumn[] = [
