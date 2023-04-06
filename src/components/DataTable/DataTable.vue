@@ -65,7 +65,11 @@
         >
           <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
             <slot
-              v-if="String(slotName).startsWith('header') || String(slotName).startsWith('expanded')"
+              v-if="
+                String(slotName).startsWith('header') ||
+                String(slotName).startsWith('expanded') ||
+                slotName === 'filter'
+              "
               :name="slotName"
               v-bind="slotProps || {}"
             />
@@ -540,7 +544,7 @@ const colWidths = computed(() => {
   flex-direction: column;
 }
 .vdt--row-selected {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15) !important;
 }
 .vdt--row-inner {
   display: flex;
@@ -597,6 +601,7 @@ const colWidths = computed(() => {
   border: 1px solid rgba(255, 255, 255, 0.6);
   padding: 5px 10px 10px 10px;
   display: flex;
+  align-items: center;
 }
 .vdt-bottom-spacer {
   flex-grow: 1;

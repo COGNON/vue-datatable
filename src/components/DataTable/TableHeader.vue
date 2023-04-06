@@ -40,12 +40,16 @@
         </template>
 
         <template #filter>
-          <filter-cell
-            v-if="colIdx !== 1"
-            :col="col"
-            :filter="filters[col.name] || ''"
-            @update:model-value="(val) => $emit('updateFilter', col.field, val)"
-          />
+          <div class="vdt--th-filter" aria-description="Type to filter column">
+            <slot name="filter" :column="col" :filter-value="filters[col.name]" :update-filter="updateFilter">
+              <q-input
+                :model-value="filters[col.name]"
+                filled
+                dense
+                @update:model-value="(val) => updateFilter(col.name, String(val))"
+              />
+            </slot>
+          </div>
         </template>
       </header-cell>
     </tr>
@@ -53,10 +57,10 @@
 </template>
 
 <script setup lang="ts">
+import { emit } from 'process';
 import { computed } from 'vue';
 import { VColumn, VFilter, VSorter, VSelectionModes } from '../types';
 import HeaderCell from './HeaderCell.vue';
-import FilterCell from './FilterCell.vue';
 
 const props = defineProps<{
   scrollLeft: number;
@@ -88,4 +92,6 @@ const theadContainerStyle = computed(() => {
 
 const allSelected = computed(() => props.selected.length === props.totalRowCount);
 const selectAll = (val: boolean) => emit('selectAll', val);
+
+const updateFilter = (field: string, val: string) => emit('updateFilter', field, val);
 </script>
