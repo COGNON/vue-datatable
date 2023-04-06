@@ -4,8 +4,8 @@
     :aria-colcount="colIdx + 1"
     tabindex="-1"
     :style="{ width: `${col.width}px` }"
-    @click="(e: MouseEvent) => $emit('onCellClick',e,row,col)"
-    @dbl-click="(e:MouseEvent) => $emit('onCellDblClick',e,row,col)"
+    @click="(e: MouseEvent) => $emit('onCellClick',e)"
+    @dbl-click="(e:MouseEvent) => $emit('onCellDblClick',e)"
   >
     <slot name="body-cell" :col="col" :row="row" :value="value" :col-index="colIdx">
       {{ value }}
@@ -24,8 +24,8 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'onCellClick', event: MouseEvent, row: any, col: VColumn): void;
-  (e: 'onCellDblClick', event: MouseEvent, row: any, col: VColumn): void;
+  (e: 'onCellClick', event: MouseEvent): void;
+  (e: 'onCellDblClick', event: MouseEvent): void;
 }>();
 
 const value = computed(() => {

@@ -16,6 +16,8 @@
       selection="multiple"
       row-key="_id"
       :pagination="pagination"
+      title="test"
+      state-key="test-table"
     >
       <template #expanded>Test</template>
       <template #bottom>

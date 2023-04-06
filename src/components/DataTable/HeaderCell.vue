@@ -1,11 +1,5 @@
 <template>
-  <th
-    class="vdt--th"
-    tabindex="-1"
-    :name="col.name"
-    @click="(e: MouseEvent) => $emit('onHdrCellClick',e,col)"
-    @dbl-click="(e:MouseEvent) => $emit('onHdrCellDblClick',e,col)"
-  >
+  <th class="vdt--th" tabindex="-1" :name="col.name">
     <div
       v-if="resizableColumns"
       class="vdt--th-resizer"
@@ -19,7 +13,7 @@
         </slot>
       </span>
       <div v-if="sorterIdx !== -1">
-        <span :class="`mdi mdi-sort-${sorterIcon}`" />
+        <span :class="`mdi mdi-sort-${sorterIcon} q-pl-sm`" />
         <sub v-if="sorters.length > 1">{{ sorterIdx + 1 }}</sub>
       </div>
     </div>
@@ -42,8 +36,6 @@ const props = defineProps<{
 defineEmits<{
   (e: 'updateSorter', event: MouseEvent): void;
   (e: 'onResizeStart', event: MouseEvent): void;
-  (e: 'onHdrCellClick', event: MouseEvent, col: VColumn): void;
-  (e: 'onHdrCellDblClick', event: MouseEvent, col: VColumn): void;
 }>();
 
 const sorterIdx = computed(() => findSorterIndex(props.sorters, props.col.name));

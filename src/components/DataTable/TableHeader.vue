@@ -1,6 +1,6 @@
 <template>
   <thead class="vdt--thead-container" :style="theadContainerStyle">
-    <tr class="vdt--thead-tr">
+    <tr :class="`vdt--thead-tr ${extraClasses.headerRow}`">
       <th v-if="selection !== 'none'" class="vdt--th vdt--th-extra">
         <slot name="header-selection" :all-selected="allSelected" :select-all="selectAll">
           <q-checkbox
@@ -19,6 +19,7 @@
         :col="col"
         :aria-colindex="colIdx + 1"
         :style="{ width: `${col.width}px` }"
+        :class="extraClasses.headerCell"
         :resizable-columns="resizableColumns"
         :draggable="reorderableColumns ? true : null"
         :sorters="sorters"
@@ -57,9 +58,8 @@
 </template>
 
 <script setup lang="ts">
-import { emit } from 'process';
 import { computed } from 'vue';
-import { VColumn, VFilter, VSorter, VSelectionModes } from '../types';
+import { VRow, VColumn, VFilter, VSorter, VSelectionModes, VExtraClasses } from '../types';
 import HeaderCell from './HeaderCell.vue';
 
 const props = defineProps<{
@@ -71,8 +71,9 @@ const props = defineProps<{
   sorters: VSorter[];
   filters: VFilter;
   selection: VSelectionModes;
-  selected: any[];
+  selected: VRow[];
   totalRowCount: number;
+  extraClasses: VExtraClasses;
 }>();
 
 const emit = defineEmits<{

@@ -1,7 +1,7 @@
-import { VFilter } from 'src/components/DataTable/types';
+import { VFilter, VRow } from 'src/components/types';
 
 export default function useFilter() {
-  const handleFilterRows = (filters: VFilter, rows: any[]) => {
+  const handleFilterRows = (filters: VFilter, rows: VRow[]) => {
     return rows.filter((row) => {
       return Object.keys(filters).every((field) => {
         if (!filters[field]) {
@@ -13,7 +13,7 @@ export default function useFilter() {
     });
   };
 
-  const handleGlobalFilter = (filter: string, rows: any[]) => {
+  const handleGlobalFilter = (filter: string, rows: VRow[]) => {
     return rows.filter((row) => {
       return Object.values(row).some((value) => {
         return String(value).toLowerCase().includes(filter.toLowerCase());

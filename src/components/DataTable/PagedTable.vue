@@ -15,12 +15,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue';
-import { VColumn, VPagination } from '../types';
+import { VRow, VColumn, VPagination } from '../types';
 import FakeVerticalScroll from './FakeVerticalScroll.vue';
 import useVirtualScroll from 'src/composables/useVirtualScroll';
 
 const props = defineProps<{
-  rows: any[];
+  rows: Array<VRow[]>;
   columns: VColumn[];
   rowHeight: number;
   rootHeight: number;

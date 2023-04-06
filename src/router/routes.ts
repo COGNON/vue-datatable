@@ -6,8 +6,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
-        path: '',
+        path: 'datatable',
+        name: 'datatable',
         component: () => import('pages/DataTable.vue'),
+        children: [{ path: 'basic', name: 'datatable-basic', component: () => import('pages/BasicDatatable.vue') }],
       },
     ],
   },
