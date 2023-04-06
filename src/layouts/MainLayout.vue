@@ -2,23 +2,35 @@
   <q-layout view="hHh lpr lFf">
     <q-header elevated>
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+        <q-toolbar-title>COGNON</q-toolbar-title>
 
-        <q-toolbar-title> COGNON </q-toolbar-title>
+        <q-space />
+
+        <q-btn round flat padding="0px" class="icon-link" href="https://github.com/cognon/vue-datatable">
+          <q-icon :name="mdiGithub" size="md" />
+        </q-btn>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" overlay bordered>
+    <q-drawer v-model="leftDrawerOpen" bordered :width="200">
       <q-list>
-        <q-item v-for="link in essentialLinks" :key="link.title" :to="link.to"
-          >{{ link.title }}
+        <q-item v-for="link in navTree" :key="link.label" :to="link.to" clickable>
+          <q-expansion-item
+            v-if="link.children"
+            expand-icon-toggle
+            switch-toggle-side
+            dense-toggle
+            dense
+            :label="link.label"
+            :content-inset-level="1"
+          >
+            <q-list>
+              <q-item v-for="item in link.children" :key="item.label" :to="link.to" clickable>
+                <q-item-section>{{ item.label }}</q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
+          <q-item-section v-else>{{ link.label }}</q-item-section>
         </q-item>
       </q-list>
     </q-drawer>
@@ -30,28 +42,27 @@
 </template>
 
 <script setup lang="ts">
-import { type Ref, ref } from 'vue';
+import { ref } from 'vue';
+import { mdiGithub } from '@quasar/extras/mdi-v7';
 
-interface Link {
-  title: string;
-  caption: string;
-  icon: string;
-  to?: string;
-  link?: string;
-}
+const leftDrawerOpen = ref(true);
 
-const essentialLinks: Link[] = [
+const navTree = ref([
   {
-    title: 'Github',
-    caption: 'github.com/cognon',
-    icon: 'code',
-    link: 'https://github.com/cognon',
+    label: 'Datatable',
+    to: { name: 'datatable' },
+    children: [
+      {
+        label: 'Basic',
+        to: { name: 'datatable-basic' },
+      },
+    ],
   },
-];
-
-const leftDrawerOpen: Ref<boolean> = ref(false);
-
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
-}
+]);
 </script>
+
+<style scoped>
+.icon-link {
+  color: none;
+}
+</style>

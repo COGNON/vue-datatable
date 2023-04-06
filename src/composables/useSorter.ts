@@ -1,8 +1,8 @@
-import { VSorter } from 'src/components/DataTable/types';
+import { VSorter, VRow } from 'src/components/types';
 import { findSorterIndex } from 'src/components/utils';
 
 export default function useSorter() {
-  const sortRows = (sorters: VSorter[], rows: any[]): any[] => {
+  const sortRows = (sorters: VSorter[], rows: VRow[]): VRow[] => {
     if (!sorters.length) return rows;
 
     // sort by num in order, then convert fields into an array

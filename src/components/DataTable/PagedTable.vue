@@ -15,12 +15,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue';
-import { VColumn, VPagination } from '../types';
+import { VRow, VColumn, VPagination } from '../types';
 import FakeVerticalScroll from './FakeVerticalScroll.vue';
 import useVirtualScroll from 'src/composables/useVirtualScroll';
 
 const props = defineProps<{
-  rows: any[];
+  rows: Array<VRow[]>;
   columns: VColumn[];
   rowHeight: number;
   rootHeight: number;
@@ -31,9 +31,13 @@ const props = defineProps<{
   currentPage: number;
 }>();
 
-const { tbodyScrollRef, scrollTop, offsetY, onVScroll, handleVScrollEvent } = useVirtualScroll(props);
+const { tbodyScrollRef, scrollTop, onVScroll, handleVScrollEvent } = useVirtualScroll(props);
 
 onMounted(() => tbodyScrollRef.value?.addEventListener('scroll', onVScroll));
+watch(
+  () => props.currentPage,
+  () => tbodyScrollRef.value?.scrollTo({ top: 0 })
+);
 
 // either the height of the # of rows per page, or the height of the actual # of rows on the current page if it's smaller
 const tbodyHeight = computed(() =>
@@ -46,7 +50,7 @@ const tbodyHeight = computed(() =>
 const tbodyContainerStyle = computed(() => {
   return {
     width: `${props.colWidths}px`,
-    transform: `translate(${-props.scrollLeft}px,${offsetY.value}px)`,
+    transform: `translate(${-props.scrollLeft}px,0px)`,
   };
 });
 </script>

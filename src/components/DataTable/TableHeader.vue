@@ -1,6 +1,6 @@
 <template>
   <thead class="vdt--thead-container" :style="theadContainerStyle">
-    <tr class="vdt--thead-tr">
+    <tr :class="`vdt--thead-tr ${extraClasses.headerRow}`">
       <th v-if="selection !== 'none'" class="vdt--th vdt--th-extra">
         <slot name="header-selection" :all-selected="allSelected" :select-all="selectAll">
           <q-checkbox
@@ -18,7 +18,8 @@
         :key="col.name"
         :col="col"
         :aria-colindex="colIdx + 1"
-        :style="{ width: `${col.width}px` }"
+        :style="{ width: `${col.width}px`, textAlign: col.align }"
+        :class="extraClasses.headerCell"
         :resizable-columns="resizableColumns"
         :draggable="reorderableColumns ? true : null"
         :sorters="sorters"
@@ -40,12 +41,16 @@
         </template>
 
         <template #filter>
-          <filter-cell
-            v-if="colIdx !== 1"
-            :col="col"
-            :filter="filters[col.name] || ''"
-            @update:model-value="(val) => $emit('updateFilter', col.field, val)"
-          />
+          <div class="vdt--th-filter" aria-description="Type to filter column">
+            <slot name="filter" :column="col" :filter-value="filters[col.name]" :update-filter="updateFilter">
+              <q-input
+                :model-value="filters[col.name]"
+                filled
+                dense
+                @update:model-value="(val) => updateFilter(col.name, String(val))"
+              />
+            </slot>
+          </div>
         </template>
       </header-cell>
     </tr>
@@ -54,9 +59,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { VColumn, VFilter, VSorter, VSelectionModes } from '../types';
+import { VRow, VColumn, VFilter, VSorter, VSelectionModes, VExtraClasses } from '../types';
 import HeaderCell from './HeaderCell.vue';
-import FilterCell from './FilterCell.vue';
 
 const props = defineProps<{
   scrollLeft: number;
@@ -67,8 +71,9 @@ const props = defineProps<{
   sorters: VSorter[];
   filters: VFilter;
   selection: VSelectionModes;
-  selected: any[];
+  selected: VRow[];
   totalRowCount: number;
+  extraClasses: VExtraClasses;
 }>();
 
 const emit = defineEmits<{
@@ -88,4 +93,6 @@ const theadContainerStyle = computed(() => {
 
 const allSelected = computed(() => props.selected.length === props.totalRowCount);
 const selectAll = (val: boolean) => emit('selectAll', val);
+
+const updateFilter = (field: string, val: string) => emit('updateFilter', field, val);
 </script>

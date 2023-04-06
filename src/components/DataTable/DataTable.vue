@@ -1,7 +1,7 @@
 <template>
   <div
     ref="rootRef"
-    :class="`vdt--root-wrapper ${tableBorderCls}`"
+    :class="`vdt--root-wrapper ${tableBorderCls} ${extraClasses.table}`"
     role="presentation"
     :style="{ height: `${rootHeight}px` }"
   >
@@ -10,7 +10,7 @@
     </div>
 
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer" />
-    <div v-if="reorderableColumns" class="vdt--column-drop-wrapper" role="presentation">
+    <div v-if="reorderableColumns">
       <div ref="dropColIndicatorDown" class="mdi mdi-arrow-down-bold vdt--drop-indicator" :style="dropDownStyle" />
       <div ref="dropColIndicatorUp" class="mdi mdi-arrow-up-bold vdt--drop-indicator" :style="dropUpStyle" />
     </div>
@@ -31,7 +31,7 @@
       </slot>
     </div>
 
-    <div v-else class="vdt--root-wrapper-body" role="presentation">
+    <div class="vdt--root-wrapper-body" role="presentation">
       <div
         class="vdt--root"
         role="treegrid"
@@ -53,7 +53,8 @@
           :selection="selection"
           :selected="selected"
           :total-row-count="rows.length"
-          :class="pagination ? 'vdt--thead-pagination' : ''"
+          :class="`${pagination ? 'vdt--thead-pagination' : ''} ${extraClasses.thead}`"
+          :extra-classes="extraClasses"
           @update-sorter="updateSorters"
           @update-filter="updateFilter"
           @on-resize-start="onColResizeStart"
@@ -65,7 +66,11 @@
         >
           <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
             <slot
-              v-if="String(slotName).startsWith('header') || String(slotName).startsWith('expanded')"
+              v-if="
+                String(slotName).startsWith('header') ||
+                String(slotName).startsWith('expanded') ||
+                slotName === 'filter'
+              "
               :name="slotName"
               v-bind="slotProps || {}"
             />
@@ -75,7 +80,7 @@
         <paged-table
           v-if="pagination.rowsPerPage && processedRows.length"
           v-slot="{ pagedRows, startNode }"
-          :rows="processedRows"
+          :rows="processedRows as Array<VRow[]>"
           :columns="processedColumns"
           :row-height="rowHeight"
           :col-widths="colWidths"
@@ -96,9 +101,14 @@
             :row-key="rowKey"
             :virtual-start-node="startNode"
             :expanded-rows="expandedRows"
+            :extra-classes="extraClasses"
             @update-expanded-height="handleExpandedRowHeight"
             @update-selected="updateSelected"
             @update-expanded="updateExpanded"
+            @on-cell-click="(e, col, row) => $emit('onCellClick', e, col, row)"
+            @on-cell-dbl-click="(e, col, row) => $emit('onCellDblClick', e, col, row)"
+            @on-row-click="(e, row) => $emit('onRowClick', e, row)"
+            @on-row-dbl-click="(e, row) => $emit('onRowDblClick', e, row)"
           >
             <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
               <slot
@@ -134,9 +144,14 @@
             :selected="selectedByKey"
             :row-key="rowKey"
             :expanded-rows="expandedRows"
+            :extra-classes="extraClasses"
             @update-expanded-height="(val) => (expandedRowHeight[0] += val)"
             @update-selected="updateSelected"
             @update-expanded="updateExpanded"
+            @on-cell-click="(e, col, row) => $emit('onCellClick', e, col, row)"
+            @on-cell-dbl-click="(e, col, row) => $emit('onCellDblClick', e, col, row)"
+            @on-row-click="(e, row) => $emit('onRowClick', e, row)"
+            @on-row-dbl-click="(e, row) => $emit('onRowDblClick', e, row)"
           >
             <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
               <slot
@@ -188,8 +203,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { VColumn, VFilter, VSorter, VSelectionModes, VCellSeparators, VPagination } from '../types';
+import { computed, onMounted, ref, watch } from 'vue';
+import {
+  VRow,
+  VColumn,
+  VFilter,
+  VSorter,
+  VSelectionModes,
+  VCellSeparators,
+  VPagination,
+  VExtraClasses,
+} from '../types';
 import TableHeader from './TableHeader.vue';
 import FakeHorizontalScroll from './FakeHorizontalScroll.vue';
 import VirtualScroller from './VirtualScroller.vue';
@@ -204,10 +228,11 @@ import useTableCls from 'src/composables/useTableCls';
 import useRowSelect from 'src/composables/useRowSelect';
 import usePagination from 'src/composables/usePagination';
 import useExpandedRows from 'src/composables/useExpandedRows';
+import useSaveState from 'src/composables/useSaveState';
 
 interface Props {
   columns: VColumn[];
-  rows: any[];
+  rows: VRow[];
   rootHeight?: number;
   rowHeight?: number;
   virtualScrollNodePadding?: number;
@@ -228,6 +253,9 @@ interface Props {
   rowKey?: string;
   pagination?: VPagination;
   hideTableBottom?: boolean;
+  extraClasses?: VExtraClasses;
+  stateKey?: string;
+  columnDefaults?: Partial<VColumn>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -248,6 +276,7 @@ const props = withDefaults(defineProps<Props>(), {
   selection: 'none',
   rowKey: '',
   hideTableBottom: false,
+  stateKey: '',
   pagination: () => {
     return { rowsPerPage: 0 };
   },
@@ -255,7 +284,26 @@ const props = withDefaults(defineProps<Props>(), {
     return {};
   },
   defaultSorters: () => [],
+  extraClasses: () => {
+    return {};
+  },
+  columnDefaults: () => {
+    return {
+      align: 'left',
+      width: 150,
+      resizable: true,
+      sortable: true,
+      filterable: true,
+    };
+  },
 });
+
+defineEmits<{
+  (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void;
+  (e: 'onCellDblClick', event: MouseEvent, col: VColumn, row: VRow): void;
+  (e: 'onRowClick', event: MouseEvent, row: VRow): void;
+  (e: 'onRowDblClick', event: MouseEvent, row: VRow): void;
+}>();
 
 const scrollLeft = ref(0);
 
@@ -286,7 +334,7 @@ watch(
 );
 
 function processColumns(columns: VColumn[]) {
-  return columns;
+  return columns.map((col) => Object.assign({}, props.columnDefaults, col));
 }
 
 const {
@@ -315,7 +363,7 @@ const dropUpStyle = computed(() => {
 });
 
 const globalFilterValue = ref('');
-function filterGlobally(filter: string, rows: any[]): any[] {
+function filterGlobally(filter: string, rows: VRow[]): VRow[] {
   if (!filter) return props.rows;
   return handleGlobalFilter(filter, rows);
 }
@@ -326,7 +374,7 @@ watch(
   (newFilters) => (filters.value = newFilters)
 );
 
-function updateFilter(field: string, val: any) {
+function updateFilter(field: string, val: unknown) {
   if (val) filters.value[field] = String(val);
   else delete filters.value[field];
 }
@@ -339,7 +387,7 @@ watch(
 
 const { sortRows, handleSortUpdate } = useSorter();
 
-const processedRows = computed(() => {
+const processedRows = computed<VRow[] | Array<VRow[]>>(() => {
   let rows = props.rows;
   rows = sortRows(sorters.value, rows);
 
@@ -360,7 +408,7 @@ function updateSorters(e: MouseEvent, field: string): void {
 
 const { handleFilterRows, handleGlobalFilter } = useFilter();
 
-function filterRows(filters: VFilter, rows: any[]): any[] {
+function filterRows(filters: VFilter, rows: VRow[]): VRow[] {
   // no filters, return original rows
   if (!Object.keys(filters).length) return props.rows;
   return handleFilterRows(filters, rows);
@@ -371,6 +419,34 @@ const colWidths = computed(() => {
   processedColumns.value.map((col: any) => (width += col.width || 150));
   return width;
 });
+
+const { getState, saveState, loadState } = useSaveState();
+
+onMounted(() => {
+  const savedState = loadState(props.stateKey);
+  if (savedState) {
+    sorters.value = savedState.sorters;
+    filters.value = savedState.filters;
+
+    const newCols = savedState.columns.map((col) => {
+      const curCol = processedColumns.value.find((tmpCol) => tmpCol.name === col.name);
+      if (curCol) {
+        return Object.assign({}, curCol, col);
+      }
+    }) as VColumn[];
+
+    processedColumns.value = newCols;
+  }
+});
+
+watch(
+  [processedColumns, sorters, filters],
+  ([newCols, newSorters, newFilters]) => {
+    const newState = getState(newCols, newSorters, newFilters);
+    if (newState) saveState(props.stateKey, newState);
+  },
+  { deep: true }
+);
 </script>
 
 <style>
@@ -396,7 +472,6 @@ const colWidths = computed(() => {
 }
 .vdt--root-wrapper {
   height: 100%;
-  position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -408,9 +483,6 @@ const colWidths = computed(() => {
   top: 0px;
   display: none;
   border: 1px solid var(--q-accent);
-}
-.vdt--column-drop-wrapper {
-  display: flex;
 }
 .vdt--drop-indicator {
   position: absolute;
@@ -432,9 +504,7 @@ const colWidths = computed(() => {
   display: flex;
   flex-direction: row;
 }
-.vdt--root,
 .vdt--thead,
-.vdt--thead-container,
 .vdt--tbody-hscroll-container,
 .vdt--tbody-hscroll-viewport {
   position: relative;
@@ -508,8 +578,6 @@ const colWidths = computed(() => {
   text-overflow: ellipsis;
 }
 .vdt--th-label {
-  display: flex;
-  flex: 1 1 auto;
   align-items: center;
 }
 .vdt--tbody {
@@ -540,7 +608,7 @@ const colWidths = computed(() => {
   flex-direction: column;
 }
 .vdt--row-selected {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15) !important;
 }
 .vdt--row-inner {
   display: flex;
@@ -597,6 +665,7 @@ const colWidths = computed(() => {
   border: 1px solid rgba(255, 255, 255, 0.6);
   padding: 5px 10px 10px 10px;
   display: flex;
+  align-items: center;
 }
 .vdt-bottom-spacer {
   flex-grow: 1;

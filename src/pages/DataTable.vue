@@ -1,57 +1,5 @@
 <template>
   <div class="q-pa-md q-gutter-y-lg">
-    <!-- <div>
-      <div class="text-h5">Query Fields</div>
-      <div class="row q-gutter-x-md">
-        <q-input :style="{ width: '100px' }" label="Label" :model-value="''" filled dense />
-        <q-input :style="{ width: '120px' }" label="Label" :model-value="''" filled dense />
-        <q-input :style="{ width: '100px' }" label="Label" :model-value="''" filled dense />
-        <q-input :style="{ width: '130px' }" label="Label" :model-value="''" filled dense />
-        <q-input :style="{ width: '180px' }" label="Label" :model-value="''" filled dense />
-        <q-input label="Label" :model-value="''" filled dense />
-        <q-input label="Label" :model-value="''" filled dense />
-      </div>
-    </div>
-
-    <div class="row q-gutter-x-lg">
-      <div class="column">
-        <div class="text-h5">Query Fields</div>
-        <div class="row q-gutter-x-md">
-          <q-input :style="{ width: '150px' }" label="Label" :model-value="''" filled dense />
-          <q-input :style="{ width: '150px' }" label="Label" :model-value="''" filled dense />
-        </div>
-      </div>
-
-      <div class="column">
-        <div class="text-h5">Query Fields</div>
-        <div class="row q-gutter-x-md">
-          <q-input :style="{ width: '120px' }" label="Label" :model-value="''" filled dense />
-          <q-input :style="{ width: '120px' }" label="Label" :model-value="''" filled dense />
-          <q-input :style="{ width: '100px' }" label="Label" :model-value="''" filled dense />
-          <q-input label="Label" :style="{ width: '80px' }" :model-value="''" filled dense />
-        </div>
-      </div>
-    </div>
-
-    <div class="row q-gutter-x-md">
-      <q-checkbox :model-value="false" label="Show Bad" dense />
-      <q-checkbox :model-value="false" label="Show Unprocessed" dense />
-    </div>
-
-    <div>
-      <div class="text-h5">Date Range</div>
-      <div class="row q-gutter-x-md">
-        <q-input label="Start" :model-value="''" filled dense :rules="[(val) => !!val || 'Error']" />
-        <q-input label="End" :model-value="''" filled dense :rules="[(val) => !!val || 'Error']" />
-      </div>
-    </div>
-
-    <div class="row q-gutter-x-md">
-      <q-btn color="positive" label="Submit" />
-      <q-btn color="negative" flat label="Reset" />
-      <q-input :style="{ width: '200px' }" label="Label" :model-value="''" filled dense />
-    </div> -->
-
     <DataTable
       :rows="rows"
       :columns="columns1"
@@ -59,6 +7,7 @@
       separators="cell"
       reorderable-columns
       resizable-columns
+      striped-rows
       wrap-cells="wrap"
       :loading="loading"
       :height="500"
@@ -67,6 +16,8 @@
       selection="multiple"
       row-key="_id"
       :pagination="pagination"
+      title="test"
+      state-key="test-table"
     >
       <template #expanded>Test</template>
       <template #bottom>
@@ -113,6 +64,7 @@ const columns1: VColumn[] = [
     field: 'age',
     header: 'Age',
     width: 150,
+    align: 'center',
   },
   {
     name: 'gender',

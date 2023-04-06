@@ -15,12 +15,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { VColumn } from '../types';
+import { VRow, VColumn } from '../types';
 import FakeVerticalScroll from './FakeVerticalScroll.vue';
 import useVirtualScroll from 'src/composables/useVirtualScroll';
 
 const props = defineProps<{
-  rows: any[];
+  rows: VRow[];
   columns: VColumn[];
   rowHeight: number;
   virtualScrollNodePadding: number;

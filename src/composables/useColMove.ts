@@ -1,4 +1,4 @@
-import { VColumn } from 'src/components/DataTable/types';
+import { VColumn } from 'src/components/types';
 import { getColIdx } from 'src/components/utils';
 import { ref } from 'vue';
 
@@ -28,11 +28,14 @@ export default function useColMove() {
 
     if (!(srcField && destField)) return columns;
 
+    const root = (e.target as HTMLElement).closest('.vdt--root-wrapper') as HTMLElement;
+    if (!root) return columns;
+
     if (srcField !== destField) {
       const srcColIdx = getColIdx(columns, srcField);
       const sourceCol = columns.splice(srcColIdx, 1);
       const destColIdx = getColIdx(columns, destField);
-      const colCenter = targetCol.offsetLeft + targetCol.offsetWidth / 2;
+      const colCenter = targetCol.offsetLeft + root.offsetLeft + targetCol.offsetWidth / 2;
 
       if (colCenter < e.clientX) {
         // move after
@@ -69,7 +72,12 @@ export default function useColMove() {
     const targetCol = getClosestColEl(e.target as HTMLElement);
     if (!targetCol) return;
 
-    const { top, left } = getOffset(targetCol);
+    const root = (e.target as HTMLElement).closest('.vdt--root-wrapper') as HTMLElement;
+    if (!root) return;
+
+    const left = targetCol.offsetLeft + root.offsetLeft;
+    const top = (targetCol.offsetParent as HTMLElement).offsetTop;
+
     const colWidth = targetCol.offsetWidth;
     const colCenter = left + colWidth / 2;
     const iconHeight = dropColIndicatorDown.value.clientHeight / 2;
@@ -79,8 +87,10 @@ export default function useColMove() {
     iconUpTop.value = top + targetCol.clientHeight - iconHeight;
 
     if (colCenter < e.clientX) {
+      // move after
       iconYLocation.value = left + colWidth - iconWidth;
     } else {
+      // move before
       iconYLocation.value = left - iconWidth;
     }
 
@@ -90,10 +100,6 @@ export default function useColMove() {
   };
 
   const getClosestColEl = (target: HTMLElement): HTMLElement | null => target.closest('.vdt--th');
-
-  function getOffset(target: HTMLElement): { top: number; left: number } {
-    return { top: target.offsetTop, left: target.offsetLeft };
-  }
 
   return {
     dropColIndicatorDown,

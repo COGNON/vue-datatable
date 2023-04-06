@@ -1,4 +1,4 @@
-import { VColumn } from 'src/components/DataTable/types';
+import { VColumn } from 'src/components/types';
 import { ref } from 'vue';
 
 export default function useColResize() {
@@ -32,7 +32,7 @@ export default function useColResize() {
 
     resizerRef.value.setAttribute(
       'style',
-      ` height: ${rootRef.value.clientHeight}px; left: ${e.pageX}px; display:block;`
+      ` height: ${rootRef.value.clientHeight}px; left: ${e.pageX}px; top:${rootRef.value.offsetTop}px; display:block;`
     );
   };
 

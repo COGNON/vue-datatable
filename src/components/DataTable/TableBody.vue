@@ -1,8 +1,9 @@
 <template>
-  <tbody>
+  <tbody :class="extraClasses.tbody">
     <table-row
       v-for="(row, rowIdx) in rows"
       :key="rowIdx"
+      :class="extraClasses.row"
       :row="row"
       :row-index="rowIdx + virtualStartNode"
       :columns="columns"
@@ -10,9 +11,14 @@
       :selection="selection"
       :selected="selected[row[rowKey]] || false"
       :expanded="expandedRows[rowIdx + virtualStartNode] || false"
+      :extra-classes="extraClasses"
       @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
       @update-selected="$emit('updateSelected', row)"
       @update-expanded="(idx) => $emit('updateExpanded', idx)"
+      @click="(e: MouseEvent) => $emit('onRowClick',e,row)"
+      @dbl-click="(e: MouseEvent) => $emit('onRowDblClick',e,row)"
+      @on-cell-click="(e, col) => $emit('onCellClick', e, col, row)"
+      @on-cell-dbl-click="(e, col) => $emit('onCellDblClick', e, col, row)"
     >
       <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
         <slot
@@ -26,11 +32,11 @@
 </template>
 
 <script setup lang="ts">
-import { VSelectedRow, VSelectionModes, VColumn } from '../types';
+import { VRow, VExpandedRow, VSelectedRow, VSelectionModes, VColumn, VExtraClasses } from '../types';
 import TableRow from './TableRow.vue';
 
 defineProps<{
-  rows: any[];
+  rows: VRow[];
   columns: VColumn[];
   rowHeight: number;
   colWidths: number;
@@ -38,12 +44,17 @@ defineProps<{
   selection: VSelectionModes;
   selected: VSelectedRow;
   rowKey: string;
-  expandedRows: VSelectedRow;
+  expandedRows: VExpandedRow;
+  extraClasses: VExtraClasses;
 }>();
 
 defineEmits<{
   (e: 'updateExpandedHeight', changeHeight: number): void;
-  (e: 'updateSelected', row: any): void;
+  (e: 'updateSelected', row: VRow): void;
   (e: 'updateExpanded', index: number): void;
+  (e: 'onRowClick', event: MouseEvent, row: VRow): void;
+  (e: 'onRowDblClick', event: MouseEvent, row: VRow): void;
+  (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void;
+  (e: 'onCellDblClick', event: MouseEvent, col: VColumn, row: VRow): void;
 }>();
 </script>

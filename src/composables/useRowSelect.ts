@@ -1,8 +1,8 @@
-import { SelectedRow } from 'src/components/types';
+import { SelectedRow, VRow } from 'src/components/types';
 import { ref } from 'vue';
 
 export default function useRowSelect(props: any) {
-  const selected = ref<any[]>([]);
+  const selected = ref<VRow[]>([]);
   const selectedByKey = ref<SelectedRow>({});
 
   function updateSelected(row: any) {
