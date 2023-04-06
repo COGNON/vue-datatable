@@ -64,6 +64,7 @@ const columns1: VColumn[] = [
     field: 'age',
     header: 'Age',
     width: 150,
+    align: 'center',
   },
   {
     name: 'gender',

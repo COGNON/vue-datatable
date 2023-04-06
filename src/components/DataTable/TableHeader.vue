@@ -18,7 +18,7 @@
         :key="col.name"
         :col="col"
         :aria-colindex="colIdx + 1"
-        :style="{ width: `${col.width}px` }"
+        :style="{ width: `${col.width}px`, textAlign: col.align }"
         :class="extraClasses.headerCell"
         :resizable-columns="resizableColumns"
         :draggable="reorderableColumns ? true : null"

@@ -2,6 +2,7 @@ export type VColumn<T = unknown> = {
   name: string;
   field: string | ((row: T) => unknown);
   header: string;
+  align?: 'left' | 'right' | 'center';
   width?: number;
   resizable?: boolean;
   sortable?: boolean;

@@ -24,6 +24,7 @@
           :col-idx="colIdx"
           :col="col"
           :row="row"
+          :style="{ width: `${col.width}px`, textAlign: col.align }"
           :class="extraClasses.cell"
           @on-cell-click="(e) => $emit('onCellClick', e, col)"
           @on-cell-dbl-click="(e) => $emit('onCellDblClick', e, col)"

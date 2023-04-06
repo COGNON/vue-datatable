@@ -12,10 +12,10 @@
           {{ col.header }}
         </slot>
       </span>
-      <div v-if="sorterIdx !== -1">
+      <span v-if="sorterIdx !== -1">
         <span :class="`mdi mdi-sort-${sorterIcon} q-pl-sm`" />
         <sub v-if="sorters.length > 1">{{ sorterIdx + 1 }}</sub>
-      </div>
+      </span>
     </div>
 
     <slot name="filter" />

@@ -3,7 +3,6 @@
     class="vdt--cell"
     :aria-colcount="colIdx + 1"
     tabindex="-1"
-    :style="{ width: `${col.width}px` }"
     @click="(e: MouseEvent) => $emit('onCellClick',e)"
     @dbl-click="(e:MouseEvent) => $emit('onCellDblClick',e)"
   >

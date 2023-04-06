@@ -255,6 +255,7 @@ interface Props {
   hideTableBottom?: boolean;
   extraClasses?: VExtraClasses;
   stateKey?: string;
+  columnDefaults?: Partial<VColumn>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -285,6 +286,15 @@ const props = withDefaults(defineProps<Props>(), {
   defaultSorters: () => [],
   extraClasses: () => {
     return {};
+  },
+  columnDefaults: () => {
+    return {
+      align: 'left',
+      width: 150,
+      resizable: true,
+      sortable: true,
+      filterable: true,
+    };
   },
 });
 
@@ -324,7 +334,7 @@ watch(
 );
 
 function processColumns(columns: VColumn[]) {
-  return columns;
+  return columns.map((col) => Object.assign({}, props.columnDefaults, col));
 }
 
 const {
@@ -568,8 +578,6 @@ watch(
   text-overflow: ellipsis;
 }
 .vdt--th-label {
-  display: flex;
-  flex: 1 1 auto;
   align-items: center;
 }
 .vdt--tbody {
