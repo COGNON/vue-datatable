@@ -34,3 +34,13 @@ export type VPagination = {
   rowsPerPage: number;
   initialPage?: number;
 };
+
+export type VExtraClasses = {
+  table?: string;
+  thead?: string;
+  headerRow?: string;
+  headerCell?: string;
+  tbody?: string;
+  row?: string;
+  cell?: string;
+};

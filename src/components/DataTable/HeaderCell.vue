@@ -1,5 +1,11 @@
 <template>
-  <th class="vdt--th" tabindex="-1" :name="col.name">
+  <th
+    class="vdt--th"
+    tabindex="-1"
+    :name="col.name"
+    @click="(e: MouseEvent) => $emit('onHdrCellClick',e,col)"
+    @dbl-click="(e:MouseEvent) => $emit('onHdrCellDblClick',e,col)"
+  >
     <div
       v-if="resizableColumns"
       class="vdt--th-resizer"
@@ -36,6 +42,8 @@ const props = defineProps<{
 defineEmits<{
   (e: 'updateSorter', event: MouseEvent): void;
   (e: 'onResizeStart', event: MouseEvent): void;
+  (e: 'onHdrCellClick', event: MouseEvent, col: VColumn): void;
+  (e: 'onHdrCellDblClick', event: MouseEvent, col: VColumn): void;
 }>();
 
 const sorterIdx = computed(() => findSorterIndex(props.sorters, props.col.name));

@@ -13,6 +13,8 @@
       @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
       @update-selected="$emit('updateSelected', row)"
       @update-expanded="(idx) => $emit('updateExpanded', idx)"
+      @click="(e: MouseEvent) => $emit('onRowClick',e,row)"
+      @dbl-click="(e: MouseEvent) => $emit('onRowDblClick',e,row)"
     >
       <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
         <slot
@@ -45,5 +47,7 @@ defineEmits<{
   (e: 'updateExpandedHeight', changeHeight: number): void;
   (e: 'updateSelected', row: any): void;
   (e: 'updateExpanded', index: number): void;
+  (e: 'onRowClick', event: MouseEvent, row: any): void;
+  (e: 'onRowDblClick', event: MouseEvent, row: any): void;
 }>();
 </script>

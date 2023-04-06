@@ -193,7 +193,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { VColumn, VFilter, VSorter, VSelectionModes, VCellSeparators, VPagination } from '../types';
+import { VColumn, VFilter, VSorter, VSelectionModes, VCellSeparators, VPagination, VExtraClasses } from '../types';
 import TableHeader from './TableHeader.vue';
 import FakeHorizontalScroll from './FakeHorizontalScroll.vue';
 import VirtualScroller from './VirtualScroller.vue';
@@ -232,6 +232,7 @@ interface Props {
   rowKey?: string;
   pagination?: VPagination;
   hideTableBottom?: boolean;
+  extraClasses?: VExtraClasses;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -259,6 +260,9 @@ const props = withDefaults(defineProps<Props>(), {
     return {};
   },
   defaultSorters: () => [],
+  extraClasses: () => {
+    return {};
+  },
 });
 
 const scrollLeft = ref(0);
