@@ -1,11 +1,27 @@
 <template>
-  {{ endRowNum - pagination.rowsPerPage + 1 }} to {{ actualCurEnd }} of
-  {{ totalRowCount }}
-  <span :class="`${iconCls} mdi-chevron-double-left`" @click="$emit('updatePage', 0)" />
-  <span :class="`${iconCls} mdi-chevron-left`" @click="$emit('updatePage', currentPage - 1)" />
-  Page {{ currentPage + 1 }}
-  <span :class="`${iconCls} mdi-chevron-right`" @click="$emit('updatePage', currentPage + 1)" />
-  <span :class="`${iconCls} mdi-chevron-double-right`" @click="$emit('updatePage', totalPageNum - 1)" />
+  <div class="row items-center">
+    Rows Per Page:
+    <q-select
+      v-if="pagination.pageOptions"
+      :model-value="pagination.rowsPerPage"
+      class="q-px-sm"
+      dense
+      borderless
+      :options="pagination.pageOptions"
+      options-dense
+      @update:model-value="(val) => $emit('updateRowsPerPage', val)"
+    />
+
+    <div v-if="pagination.rowsPerPage">
+      {{ endRowNum - pagination.rowsPerPage + 1 }} to {{ actualCurEnd }} of
+      {{ totalRowCount }}
+      <span :class="`${iconCls} mdi-chevron-double-left`" @click="$emit('updatePage', 0)" />
+      <span :class="`${iconCls} mdi-chevron-left`" @click="$emit('updatePage', currentPage - 1)" />
+      Page {{ currentPage + 1 }}
+      <span :class="`${iconCls} mdi-chevron-right`" @click="$emit('updatePage', currentPage + 1)" />
+      <span :class="`${iconCls} mdi-chevron-double-right`" @click="$emit('updatePage', totalPageNum - 1)" />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -19,7 +35,10 @@ const props = defineProps<{
   pagination: VPagination;
 }>();
 
-defineEmits<{ (e: 'updatePage', page: number): void }>();
+defineEmits<{
+  (e: 'updatePage', page: number): void;
+  (e: 'updateRowsPerPage', val: number): void;
+}>();
 
 const endRowNum = computed(() => props.pagination.rowsPerPage * (props.currentPage + 1));
 const actualCurEnd = computed(() => (endRowNum.value > props.totalRowCount ? props.totalRowCount : endRowNum.value));

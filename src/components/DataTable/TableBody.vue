@@ -12,6 +12,7 @@
       :selected="selected[row[rowKey]] || false"
       :expanded="expandedRows[rowIdx + virtualStartNode] || false"
       :extra-classes="extraClasses"
+      :handle-expand-icon="handleExpandIcon"
       @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
       @update-selected="$emit('updateSelected', row)"
       @update-expanded="(idx) => $emit('updateExpanded', idx)"
@@ -21,11 +22,7 @@
       @on-cell-dbl-click="(e, col) => $emit('onCellDblClick', e, col, row)"
     >
       <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
-        <slot
-          v-if="String(slotName).startsWith('body') || String(slotName).startsWith('expanded')"
-          :name="slotName"
-          v-bind="slotProps || {}"
-        />
+        <slot :name="slotName" v-bind="slotProps || {}" />
       </template>
     </table-row>
   </tbody>
@@ -46,6 +43,7 @@ defineProps<{
   rowKey: string;
   expandedRows: VExpandedRow;
   extraClasses: VExtraClasses;
+  handleExpandIcon: boolean;
 }>();
 
 defineEmits<{

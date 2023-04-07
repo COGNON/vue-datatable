@@ -1,11 +1,16 @@
-import { SelectedRow, VRow } from 'src/components/types';
+import { VSelectedRow, VRow } from 'src/components/types';
 import { ref } from 'vue';
 
-export default function useRowSelect(props: any) {
-  const selected = ref<VRow[]>([]);
-  const selectedByKey = ref<SelectedRow>({});
+type Props = {
+  rowKey: string;
+  rows: VRow[];
+};
 
-  function updateSelected(row: any) {
+export default function useRowSelect(props: Props) {
+  const selected = ref<VRow[]>([]);
+  const selectedByKey = ref<VSelectedRow>({});
+
+  function updateSelected(row: VRow) {
     if (!props.rowKey) return;
 
     const keyVal = row[props.rowKey];
@@ -18,6 +23,8 @@ export default function useRowSelect(props: any) {
       selectedByKey.value[keyVal] = true;
       selected.value.push(row);
     }
+
+    return selected.value;
   }
 
   function onSelectAll(isAllSelected: boolean) {
@@ -26,7 +33,7 @@ export default function useRowSelect(props: any) {
     if (isAllSelected) {
       // spread to remove reactivity
       selected.value = [...props.rows];
-      props.rows.map((row: any) => (selectedByKey.value[row[props.rowKey]] = true));
+      props.rows.map((row) => (selectedByKey.value[row[props.rowKey]] = true));
     } else {
       selected.value = [];
       selectedByKey.value = {};

@@ -14,7 +14,7 @@
 
         <td v-if="$slots['expanded']" class="vdt--cell vdt--cell-extra">
           <slot name="expanded-icon" :row="row" :expanded="expanded" :expand-row="expandRow">
-            <q-btn :icon="expandIcon" round size="xs" @click="expandRow" />
+            <q-btn v-if="!handleExpandIcon" :icon="expandIcon" round size="xs" @click="expandRow" />
           </slot>
         </td>
 
@@ -60,6 +60,7 @@ const props = defineProps<{
   selected: boolean;
   expanded: boolean;
   extraClasses: VExtraClasses;
+  handleExpandIcon: boolean;
 }>();
 
 const emit = defineEmits<{

@@ -4,7 +4,7 @@
       <th v-if="selection !== 'none'" class="vdt--th vdt--th-extra">
         <slot name="header-selection" :all-selected="allSelected" :select-all="selectAll">
           <q-checkbox
-            v-if="selection === 'multiple'"
+            v-if="allowSelectAll && selection === 'multiple'"
             :model-value="allSelected"
             dense
             @update:model-value="selectAll"
@@ -74,6 +74,7 @@ const props = defineProps<{
   selected: VRow[];
   totalRowCount: number;
   extraClasses: VExtraClasses;
+  allowSelectAll: boolean;
 }>();
 
 const emit = defineEmits<{

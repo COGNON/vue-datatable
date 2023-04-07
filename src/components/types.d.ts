@@ -34,6 +34,7 @@ export type VExpandedRow = {
 export type VPagination = {
   rowsPerPage: number;
   initialPage?: number;
+  pageOptions?: number[];
 };
 
 export type VExtraClasses = {

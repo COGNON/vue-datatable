@@ -3,7 +3,7 @@
     ref="rootRef"
     :class="`vdt--root-wrapper ${tableBorderCls} ${extraClasses.table}`"
     role="presentation"
-    :style="{ height: `${rootHeight}px` }"
+    :style="{ height: `${height}px` }"
   >
     <div v-if="loading" class="vdt-loading">
       <slot name="loading">{{ loadingText }}</slot>
@@ -55,6 +55,7 @@
           :total-row-count="rows.length"
           :class="`${pagination ? 'vdt--thead-pagination' : ''} ${extraClasses.thead}`"
           :extra-classes="extraClasses"
+          :allow-select-all="allowSelectAll"
           @update-sorter="updateSorters"
           @update-filter="updateFilter"
           @on-resize-start="onColResizeStart"
@@ -84,7 +85,7 @@
           :columns="processedColumns"
           :row-height="rowHeight"
           :col-widths="colWidths"
-          :root-height="rootHeight"
+          :root-height="height"
           :scroll-left="scrollLeft"
           :expanded-row-height="expandedRowHeight[currentPage] || 0"
           :pagination="pagination"
@@ -102,8 +103,9 @@
             :virtual-start-node="startNode"
             :expanded-rows="expandedRows"
             :extra-classes="extraClasses"
+            :handle-expand-icon="handleExpandIcon"
             @update-expanded-height="handleExpandedRowHeight"
-            @update-selected="updateSelected"
+            @update-selected="handleUpdateSelected"
             @update-expanded="updateExpanded"
             @on-cell-click="(e, col, row) => $emit('onCellClick', e, col, row)"
             @on-cell-dbl-click="(e, col, row) => $emit('onCellDblClick', e, col, row)"
@@ -125,7 +127,7 @@
           v-slot="{ virtualRows, startNode }"
           :rows="processedRows"
           :columns="processedColumns"
-          :root-height="rootHeight"
+          :root-height="height"
           :virtual-scroll-node-padding="virtualScrollNodePadding"
           :row-height="rowHeight"
           :col-widths="colWidths"
@@ -145,8 +147,9 @@
             :row-key="rowKey"
             :expanded-rows="expandedRows"
             :extra-classes="extraClasses"
+            :handle-expand-icon="handleExpandIcon"
             @update-expanded-height="(val) => (expandedRowHeight[0] += val)"
-            @update-selected="updateSelected"
+            @update-selected="handleUpdateSelected"
             @update-expanded="updateExpanded"
             @on-cell-click="(e, col, row) => $emit('onCellClick', e, col, row)"
             @on-cell-dbl-click="(e, col, row) => $emit('onCellDblClick', e, col, row)"
@@ -176,10 +179,7 @@
       </div>
     </div>
 
-    <div
-      v-if="!hideTableBottom && ($slots.bottom || selection === 'multiple' || pagination.rowsPerPage)"
-      class="vdt-bottom"
-    >
+    <div v-if="!hideTableBottom && ($slots.bottom || selection === 'multiple' || pagination)" class="vdt-bottom">
       <slot name="bottom">
         <div>{{ selected.length }} selected</div>
       </slot>
@@ -189,12 +189,13 @@
       <div class="vdt--pagination">
         <slot name="pagination">
           <table-paginator
-            v-if="pagination.rowsPerPage"
+            v-if="pagination"
             :current-page="currentPage"
             :total-page-num="processedRows.length"
             :pagination="pagination"
             :total-row-count="totalRowCount"
             @update-page="(newPage) => (currentPage = newPage)"
+            @update-rows-per-page="(newCnt) => $emit('update:pagination', { ...pagination, rowsPerPage: newCnt })"
           />
         </slot>
       </div>
@@ -233,7 +234,7 @@ import useSaveState from 'src/composables/useSaveState';
 interface Props {
   columns: VColumn[];
   rows: VRow[];
-  rootHeight?: number;
+  height?: number;
   rowHeight?: number;
   virtualScrollNodePadding?: number;
   borders?: VCellSeparators;
@@ -256,10 +257,13 @@ interface Props {
   extraClasses?: VExtraClasses;
   stateKey?: string;
   columnDefaults?: Partial<VColumn>;
+  handleExpandIcon?: boolean;
+  allowSelectAll?: boolean;
+  selected: VRow[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  rootHeight: 600,
+  height: 600,
   rowHeight: 28,
   virtualScrollNodePadding: 20,
   borders: 'none',
@@ -277,6 +281,8 @@ const props = withDefaults(defineProps<Props>(), {
   rowKey: '',
   hideTableBottom: false,
   stateKey: '',
+  handleExpandIcon: false,
+  allowSelectAll: true,
   pagination: () => {
     return { rowsPerPage: 0 };
   },
@@ -298,11 +304,13 @@ const props = withDefaults(defineProps<Props>(), {
   },
 });
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void;
   (e: 'onCellDblClick', event: MouseEvent, col: VColumn, row: VRow): void;
   (e: 'onRowClick', event: MouseEvent, row: VRow): void;
   (e: 'onRowDblClick', event: MouseEvent, row: VRow): void;
+  (e: 'update:pagination', newPagination: VPagination): void;
+  (e: 'update:selected', newSelected: VRow[]): void;
 }>();
 
 const scrollLeft = ref(0);
@@ -317,7 +325,13 @@ function handleExpandedRowHeight(height: number) {
 }
 
 const { currentPage, totalRowCount, pageRows } = usePagination(props);
+
 const { selected, selectedByKey, updateSelected, onSelectAll } = useRowSelect(props);
+function handleUpdateSelected(row: VRow) {
+  const newSelected = updateSelected(row);
+  emit('update:selected', newSelected || []);
+}
+
 const { cellBorderCls, tableBorderCls, hoverCls, stripedCls } = useTableCls(props);
 
 const { onColResizeStart, resizerRef, rootRef, widthChanged } = useColResize();
