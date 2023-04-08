@@ -40,7 +40,7 @@
           <slot name="header-cell" v-bind="slotProps" :col-index="colIdx" />
         </template>
 
-        <template #filter>
+        <template v-if="col.filterable" #filter>
           <div class="vdt--th-filter" aria-description="Type to filter column">
             <slot name="filter" :column="col" :filter-value="filters[col.name]" :update-filter="updateFilter">
               <q-input

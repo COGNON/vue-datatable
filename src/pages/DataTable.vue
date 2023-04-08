@@ -47,12 +47,14 @@ const columns1: VColumn[] = [
     field: '_id',
     header: 'ID',
     width: 150,
+    filterable: false,
   },
   {
     name: 'name',
     field: 'name',
     header: 'Name',
     width: 150,
+    resizable: false,
   },
   {
     name: 'balance',
