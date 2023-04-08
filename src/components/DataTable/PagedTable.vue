@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { VRow, VColumn, VPagination } from '../types';
 import FakeVerticalScroll from './FakeVerticalScroll.vue';
 import useVirtualScroll from 'src/composables/useVirtualScroll';
@@ -34,6 +34,7 @@ const props = defineProps<{
 const { tbodyScrollRef, scrollTop, onVScroll, handleVScrollEvent } = useVirtualScroll(props);
 
 onMounted(() => tbodyScrollRef.value?.addEventListener('scroll', onVScroll));
+onUnmounted(() => tbodyScrollRef.value?.removeEventListener('scroll', onVScroll));
 watch(
   () => props.currentPage,
   () => tbodyScrollRef.value?.scrollTo({ top: 0 })

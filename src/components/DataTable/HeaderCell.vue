@@ -1,7 +1,7 @@
 <template>
   <th class="vdt--th" tabindex="-1" :name="col.name">
     <div
-      v-if="resizableColumns"
+      v-if="resizableColumns && col.resizable"
       class="vdt--th-resizer"
       @mousedown.stop.left="(e: MouseEvent) => $emit('onResizeStart', e)"
     />

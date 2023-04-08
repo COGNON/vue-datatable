@@ -1,6 +1,8 @@
 <template>
   <div class="q-pa-md q-gutter-y-lg">
     <DataTable
+      v-model:pagination="pagination"
+      v-model:selected="selected"
       :rows="rows"
       :columns="columns1"
       filter-header
@@ -10,19 +12,15 @@
       striped-rows
       wrap-cells="wrap"
       :loading="loading"
-      :height="500"
+      :height="800"
       borders="cell"
       bordered
       selection="multiple"
       row-key="_id"
-      :pagination="pagination"
       title="test"
       state-key="test-table"
     >
       <template #expanded>Test</template>
-      <template #bottom>
-        <q-select v-model="pagination.rowsPerPage" :options="[0, 20, 50, 100]" />
-      </template>
     </DataTable>
   </div>
 </template>
@@ -33,10 +31,13 @@ import DataTable from 'src/components/DataTable/DataTable.vue';
 import { VColumn } from 'src/components/types';
 import data from 'src/generated.json';
 
+const selected = ref([]);
+
 const loading = ref(false);
 const pagination = ref({
   rowsPerPage: 20,
   initialPage: 5,
+  pageOptions: [0, 20, 50, 100],
 });
 
 const rows = ref(data);
@@ -46,12 +47,14 @@ const columns1: VColumn[] = [
     field: '_id',
     header: 'ID',
     width: 150,
+    filterable: false,
   },
   {
     name: 'name',
     field: 'name',
     header: 'Name',
     width: 150,
+    resizable: false,
   },
   {
     name: 'balance',

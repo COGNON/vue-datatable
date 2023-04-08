@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-export default function useFakeVirtualScroll() {
+export default function useVerticalScroll() {
   const tbodyScrollRef = ref<HTMLElement | undefined>();
   const scrollTop = ref(0);
 

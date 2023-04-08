@@ -4,7 +4,7 @@
       <th v-if="selection !== 'none'" class="vdt--th vdt--th-extra">
         <slot name="header-selection" :all-selected="allSelected" :select-all="selectAll">
           <q-checkbox
-            v-if="selection === 'multiple'"
+            v-if="allowSelectAll && selection === 'multiple'"
             :model-value="allSelected"
             dense
             @update:model-value="selectAll"
@@ -40,7 +40,7 @@
           <slot name="header-cell" v-bind="slotProps" :col-index="colIdx" />
         </template>
 
-        <template #filter>
+        <template v-if="col.filterable" #filter>
           <div class="vdt--th-filter" aria-description="Type to filter column">
             <slot name="filter" :column="col" :filter-value="filters[col.name]" :update-filter="updateFilter">
               <q-input
@@ -74,6 +74,7 @@ const props = defineProps<{
   selected: VRow[];
   totalRowCount: number;
   extraClasses: VExtraClasses;
+  allowSelectAll: boolean;
 }>();
 
 const emit = defineEmits<{

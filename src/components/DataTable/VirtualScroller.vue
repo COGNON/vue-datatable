@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { VRow, VColumn } from '../types';
 import FakeVerticalScroll from './FakeVerticalScroll.vue';
 import useVirtualScroll from 'src/composables/useVirtualScroll';
@@ -35,6 +35,7 @@ const { tbodyScrollRef, scrollTop, visibleRows, offsetY, startNode, tbodyHeight,
   useVirtualScroll(props);
 
 onMounted(() => tbodyScrollRef.value?.addEventListener('scroll', onVScroll));
+onUnmounted(() => tbodyScrollRef.value?.removeEventListener('scroll', onVScroll));
 
 const tbodyContainerStyle = computed(() => {
   return {
