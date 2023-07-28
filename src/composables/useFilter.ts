@@ -1,4 +1,4 @@
-import { VFilter, VRow } from 'src/components/types';
+import type { VFilter, VRow } from 'src/components/types';
 
 export default function useFilter() {
   const handleFilterRows = (filters: VFilter, rows: VRow[]) => {

@@ -1,40 +1,55 @@
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import useVerticalScroll from './useVerticalScroll';
-import { VRow } from 'src/components/types';
+import type { VRow } from '../components/types';
 
 export default function useVirtualScroll(props: any) {
-  const tbodyHeight = computed(() => props.rows.length * props.rowHeight + props.expandedRowHeight);
+  const processedRows = computed(() => props.rows.map((r, idx) => ({ ...r, index: idx })));
+
+  const tbodyHeight = computed(
+    () => processedRows.value.length * props.rowHeight + props.expandedRowHeight
+  );
+
   const maxVisibleCount = computed(
     () => Math.ceil(props.rootHeight / props.rowHeight) + 2 * props.virtualScrollNodePadding
   );
 
-  const { tbodyScrollRef, scrollTop, onVScroll, handleVScrollEvent } = useVerticalScroll();
+  const { scrollTop, onVScroll } = useVerticalScroll();
 
-  let lastStartNode = 0;
-
+  const startNode = ref(0);
   const offsetY = computed(() => startNode.value * props.rowHeight);
+  const visibleRows = ref<VRow[]>(getVisibleNodes(0));
 
-  const startNode = computed(() => {
-    const tmpStart = Math.max(0, Math.floor(scrollTop.value / props.rowHeight) - props.virtualScrollNodePadding);
+  watch(scrollTop, () => {
+    const tmpStart = Math.max(
+      0,
+      Math.floor(scrollTop.value / props.rowHeight) - props.virtualScrollNodePadding
+    );
 
     // don't update if it didn't change
-    if (tmpStart === lastStartNode) return lastStartNode;
+    if (tmpStart === startNode.value) return startNode.value;
 
     if (
       // scrolled back to top
-      (tmpStart === 0 && lastStartNode !== 0) ||
+      (tmpStart === 0 && startNode.value !== 0) ||
       // if the difference is over the padding
-      Math.abs(lastStartNode - tmpStart) > props.virtualScrollNodePadding
+      Math.abs(startNode.value - tmpStart) > props.virtualScrollNodePadding - 2
     ) {
-      lastStartNode = tmpStart;
+      startNode.value = tmpStart;
+      visibleRows.value = getVisibleNodes(startNode.value);
       return tmpStart;
     }
-    return lastStartNode;
   });
 
-  const visibleRows = computed<VRow[]>(() =>
-    props.rows.slice(startNode.value, startNode.value + maxVisibleCount.value)
-  );
+  function getVisibleNodes(start: number) {
+    return processedRows.value.slice(start, start + maxVisibleCount.value);
+  }
 
-  return { tbodyScrollRef, scrollTop, visibleRows, offsetY, startNode, tbodyHeight, onVScroll, handleVScrollEvent };
+  return {
+    scrollTop,
+    visibleRows,
+    offsetY,
+    startNode,
+    tbodyHeight,
+    onVScroll
+  };
 }

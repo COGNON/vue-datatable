@@ -1,4 +1,4 @@
-import { VSelectedRow, VRow } from 'src/components/types';
+import type { VSelectedRow, VRow, VSelectionModes } from 'src/components/types';
 import { ref } from 'vue';
 
 type Props = {
@@ -10,30 +10,31 @@ export default function useRowSelect(props: Props) {
   const selected = ref<VRow[]>([]);
   const selectedByKey = ref<VSelectedRow>({});
 
-  function updateSelected(row: VRow) {
-    if (!props.rowKey) return;
+  function updateSelected(row: VRow, selection: VSelectionModes) {
+    const keyVal = row.index;
 
-    const keyVal = row[props.rowKey];
-
-    if (selectedByKey.value[keyVal]) {
-      delete selectedByKey.value[keyVal];
-      const selIdx = selected.value.findIndex((tmpRow) => tmpRow[props.rowKey] === keyVal);
-      if (selIdx !== -1) selected.value.splice(selIdx, 1);
+    if (selection === 'single') {
+      selected.value = [row];
+      selectedByKey.value = { [row.index]: true };
     } else {
-      selectedByKey.value[keyVal] = true;
-      selected.value.push(row);
+      if (selectedByKey.value[keyVal]) {
+        delete selectedByKey.value[keyVal];
+        const selIdx = selected.value.findIndex((tmpRow) => tmpRow.index === keyVal);
+        if (selIdx !== -1) selected.value.splice(selIdx, 1);
+      } else {
+        selectedByKey.value[keyVal] = true;
+        selected.value.push(row);
+      }
     }
 
     return selected.value;
   }
 
   function onSelectAll(isAllSelected: boolean) {
-    if (!props.rowKey) return;
-
     if (isAllSelected) {
       // spread to remove reactivity
       selected.value = [...props.rows];
-      props.rows.map((row) => (selectedByKey.value[row[props.rowKey]] = true));
+      props.rows.forEach((row, idx) => (selectedByKey.value[idx] = true));
     } else {
       selected.value = [];
       selectedByKey.value = {};

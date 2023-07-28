@@ -1,5 +1,5 @@
-import { VSorter, VRow } from 'src/components/types';
-import { findSorterIndex } from 'src/components/utils';
+import type { VSorter, VRow } from '../components/types';
+import { findSorterIndex } from '../components/utils';
 
 export default function useSorter() {
   const sortRows = (sorters: VSorter[], rows: VRow[]): VRow[] => {

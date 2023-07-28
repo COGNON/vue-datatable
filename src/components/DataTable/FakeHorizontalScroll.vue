@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import useHorizontalScroll from 'src/composables/useHorizontalScroll';
+import useHorizontalScroll from '../../composables/useHorizontalScroll';
 
 const props = defineProps<{ colWidths: number; clientWidth: number }>();
 const emit = defineEmits<{ (e: 'updateScroll', val: number): void }>();

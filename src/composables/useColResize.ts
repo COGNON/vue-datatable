@@ -1,4 +1,4 @@
-import { VColumn } from 'src/components/types';
+import type { VColumn } from 'src/components/types';
 import { ref } from 'vue';
 
 export default function useColResize() {

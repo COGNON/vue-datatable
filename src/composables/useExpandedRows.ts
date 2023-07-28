@@ -1,4 +1,4 @@
-import { VSelectedRow } from 'src/components/types';
+import type { VSelectedRow } from '../components/types';
 import { ref } from 'vue';
 
 export default function useExpandedRows() {

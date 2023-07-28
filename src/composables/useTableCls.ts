@@ -1,19 +1,29 @@
-import { computed } from 'vue';
+import type { VCellSeparators } from '@/components/types'
+import { computed } from 'vue'
 
-export default function useTableCls(props) {
+type Props = {
+  borders: VCellSeparators
+  bordered: boolean
+  highlightOnHover: boolean
+  stripedRows: boolean
+}
+
+export default function useTableCls(props: Props) {
   const cellBorderCls = computed(() => {
-    if (props.borders === 'none') return '';
+    if (props.borders === 'none') return ''
 
-    const cls = [];
-    if (props.borders.match(/column|cell/)) cls.push('vdt--cell-borders');
-    if (props.borders.match(/row|cell/)) cls.push('vdt--row-borders');
+    console.log(props.borders)
 
-    return cls.join(' ');
-  });
+    const cls = []
+    if (props.borders.match(/column|cell/)) cls.push('vdt--cell-borders')
+    if (props.borders.match(/row|cell/)) cls.push('vdt--row-borders')
 
-  const tableBorderCls = computed(() => (props.bordered ? 'vdt--table-border' : ''));
-  const hoverCls = computed(() => (props.hightlightOnHover ? 'vdt--row-highlight' : ''));
-  const stripedCls = computed(() => (props.stripedRows ? 'vdt--striped-rows' : ''));
+    return cls.join(' ')
+  })
 
-  return { cellBorderCls, tableBorderCls, hoverCls, stripedCls };
+  const tableBorderCls = computed(() => (props.bordered ? 'vdt--table-border' : ''))
+  const hoverCls = computed(() => (props.highlightOnHover ? 'vdt--row-highlight' : ''))
+  const stripedCls = computed(() => (props.stripedRows ? 'vdt--striped-rows' : ''))
+
+  return { cellBorderCls, tableBorderCls, hoverCls, stripedCls }
 }

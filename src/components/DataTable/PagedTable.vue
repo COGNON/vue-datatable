@@ -17,7 +17,7 @@
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 import { VRow, VColumn, VPagination } from '../types';
 import FakeVerticalScroll from './FakeVerticalScroll.vue';
-import useVirtualScroll from 'src/composables/useVirtualScroll';
+import useVirtualScroll from '../../composables/useVirtualScroll';
 
 const props = defineProps<{
   rows: Array<VRow[]>;

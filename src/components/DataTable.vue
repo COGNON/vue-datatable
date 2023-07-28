@@ -46,50 +46,8 @@
     </div>
 
     <div class="vdt--root">
-      <table
-        :aria-colcount="processedColumns.length"
-        :aria-multiselectable="true"
-        :class="[cellBorderCls, hoverCls, stripedCls, 'vdt--table']"
-        :style="{ width: `${colWidths}px` }"
-      >
-        <table-header
-          :columns="processedColumns"
-          :scroll-left="scrollLeft"
-          :row-height="rowHeight"
-          :resizable-columns="resizableColumns"
-          :reorderable-columns="reorderableColumns"
-          :sorters="sorters"
-          :filters="filters"
-          :selection="selection"
-          :selected="selected"
-          :total-row-count="rows.length"
-          :class="`${pagination ? 'vdt--thead-pagination' : ''} ${extraClasses.thead}`"
-          :extra-classes="extraClasses"
-          :allow-select-all="allowSelectAll"
-          @update-sorter="updateSorters"
-          @update-filter="updateFilter"
-          @on-resize-start="onColResizeStart"
-          @on-drag-start="onColDragStart"
-          @on-drag-end="onColDragEnd"
-          @on-drag-over="onColDragOver"
-          @on-drop="handleColDrop"
-          @select-all="onSelectAll"
-        >
-          <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
-            <slot
-              v-if="
-                String(slotName).startsWith('header') ||
-                String(slotName).startsWith('expanded') ||
-                slotName === 'filter'
-              "
-              :name="slotName"
-              v-bind="slotProps || {}"
-            />
-          </template>
-        </table-header>
-      </table>
       <virtual-scroller
-        v-slot="{ virtualRows, offsetY, tableHeight, spacerStyle }"
+        v-slot="{ virtualRows, startNode, offsetY, tableHeight, spacerStyle }"
         :rows="processedRows"
         :columns="processedColumns"
         :root-height="height"
@@ -107,6 +65,42 @@
           :class="[cellBorderCls, hoverCls, stripedCls, 'vdt--table']"
           :style="{ height: `${tableHeight}px`, width: `${colWidths}px` }"
         >
+          <table-header
+            :columns="processedColumns"
+            :scroll-left="scrollLeft"
+            :row-height="rowHeight"
+            :resizable-columns="resizableColumns"
+            :reorderable-columns="reorderableColumns"
+            :sorters="sorters"
+            :filters="filters"
+            :selection="selection"
+            :selected="selected"
+            :total-row-count="rows.length"
+            :class="`${pagination ? 'vdt--thead-pagination' : ''} ${extraClasses.thead}`"
+            :extra-classes="extraClasses"
+            :allow-select-all="allowSelectAll"
+            @update-sorter="updateSorters"
+            @update-filter="updateFilter"
+            @on-resize-start="onColResizeStart"
+            @on-drag-start="onColDragStart"
+            @on-drag-end="onColDragEnd"
+            @on-drag-over="onColDragOver"
+            @on-drop="handleColDrop"
+            @select-all="onSelectAll"
+          >
+            <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
+              <slot
+                v-if="
+                  String(slotName).startsWith('header') ||
+                  String(slotName).startsWith('expanded') ||
+                  slotName === 'filter'
+                "
+                :name="slotName"
+                v-bind="slotProps || {}"
+              />
+            </template>
+          </table-header>
+
           <template v-if="virtualRows.length">
             <table-body
               :rows="virtualRows"
@@ -114,8 +108,10 @@
               :style="{ transform: `translate3d(0px,${offsetY}px,0px)` }"
               :row-height="rowHeight"
               :col-widths="colWidths"
+              :virtual-start-node="startNode"
               :selection="selection"
               :selected="selectedByKey"
+              :row-key="rowKey"
               :expanded-rows="expandedRows"
               :extra-classes="extraClasses"
               :handle-expand-icon="handleExpandIcon"
@@ -178,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue'
 import {
   VRow,
   VColumn,
@@ -188,50 +184,52 @@ import {
   VCellSeparators,
   VPagination,
   VExtraClasses
-} from '../types';
-import TableHeader from './DataTable/TableHeader.vue';
-import VirtualScroller from './DataTable/VirtualScroller.vue';
-import TableBody from './DataTable/TableBody.vue';
-import TablePaginator from './DataTable/TablePaginator.vue';
-import useSorter from '../../composables/useSorter';
-import useFilter from '../../composables/useFilter';
-import useColResize from '../../composables/useColResize';
-import useColMove from '../../composables/useColMove';
-import useTableCls from '../../composables/useTableCls';
-import useRowSelect from '../../composables/useRowSelect';
-import usePagination from '../../composables/usePagination';
-import useExpandedRows from '../../composables/useExpandedRows';
-import useSaveState from '../../composables/useSaveState';
+} from './types'
+import TableHeader from './DataTable/TableHeader.vue'
+// import FakeHorizontalScroll from './DataTable/FakeHorizontalScroll.vue'
+import VirtualScroller from './DataTable/VirtualScroller.vue'
+// import PagedTable from './DataTable/PagedTable.vue'
+import TableBody from './DataTable/TableBody.vue'
+import TablePaginator from './DataTable/TablePaginator.vue'
+import useSorter from '../composables/useSorter'
+import useFilter from '../composables/useFilter'
+import useColResize from '../composables/useColResize'
+import useColMove from '../composables/useColMove'
+import useTableCls from '../composables/useTableCls'
+import useRowSelect from '../composables/useRowSelect'
+import usePagination from '../composables/usePagination'
+import useExpandedRows from '../composables/useExpandedRows'
+import useSaveState from '../composables/useSaveState'
 
 interface Props {
-  columns: VColumn[];
-  rows: VRow[];
-  height?: number;
-  rowHeight?: number;
-  virtualScrollNodePadding?: number;
-  borders?: VCellSeparators;
-  bordered?: boolean;
-  resizableColumns?: boolean;
-  reorderableColumns?: boolean;
-  highlightOnHover?: boolean;
-  stripedRows?: boolean;
-  globalFilter?: boolean;
-  defaultFilters?: VFilter;
-  defaultSorters?: VSorter[];
-  loading?: boolean;
-  loadingText?: string;
-  title?: string;
-  noDataText?: string;
-  selection?: VSelectionModes;
-  rowKey?: string;
-  pagination?: VPagination;
-  hideTableBottom?: boolean;
-  extraClasses?: VExtraClasses;
-  stateKey?: string;
-  columnDefaults?: Partial<VColumn>;
-  handleExpandIcon?: boolean;
-  allowSelectAll?: boolean;
-  selected: VRow[];
+  columns: VColumn[]
+  rows: VRow[]
+  height?: number
+  rowHeight?: number
+  virtualScrollNodePadding?: number
+  borders?: VCellSeparators
+  bordered?: boolean
+  resizableColumns?: boolean
+  reorderableColumns?: boolean
+  highlightOnHover?: boolean
+  stripedRows?: boolean
+  globalFilter?: boolean
+  defaultFilters?: VFilter
+  defaultSorters?: VSorter[]
+  loading?: boolean
+  loadingText?: string
+  title?: string
+  noDataText?: string
+  selection?: VSelectionModes
+  rowKey?: string
+  pagination?: VPagination
+  hideTableBottom?: boolean
+  extraClasses?: VExtraClasses
+  stateKey?: string
+  columnDefaults?: Partial<VColumn>
+  handleExpandIcon?: boolean
+  allowSelectAll?: boolean
+  selected: VRow[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -256,14 +254,14 @@ const props = withDefaults(defineProps<Props>(), {
   handleExpandIcon: false,
   allowSelectAll: true,
   pagination: () => {
-    return { rowsPerPage: 0 };
+    return { rowsPerPage: 0 }
   },
   defaultFilters: () => {
-    return {};
+    return {}
   },
   defaultSorters: () => [],
   extraClasses: () => {
-    return {};
+    return {}
   },
   columnDefaults: () => {
     return {
@@ -272,58 +270,58 @@ const props = withDefaults(defineProps<Props>(), {
       resizable: true,
       sortable: true,
       filterable: true
-    };
+    }
   }
-});
+})
 
 const emit = defineEmits<{
-  (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void;
-  (e: 'onCellDblClick', event: MouseEvent, col: VColumn, row: VRow): void;
-  (e: 'onRowClick', event: MouseEvent, row: VRow): void;
-  (e: 'onRowDblClick', event: MouseEvent, row: VRow): void;
-  (e: 'update:pagination', newPagination: VPagination): void;
-  (e: 'update:selected', newSelected: VRow[]): void;
-}>();
+  (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void
+  (e: 'onCellDblClick', event: MouseEvent, col: VColumn, row: VRow): void
+  (e: 'onRowClick', event: MouseEvent, row: VRow): void
+  (e: 'onRowDblClick', event: MouseEvent, row: VRow): void
+  (e: 'update:pagination', newPagination: VPagination): void
+  (e: 'update:selected', newSelected: VRow[]): void
+}>()
 
-const scrollLeft = ref(0);
+const scrollLeft = ref(0)
 
-const { expandedRows, expandedRowHeight, updateExpanded } = useExpandedRows();
+const { expandedRows, expandedRowHeight, updateExpanded } = useExpandedRows()
 function handleExpandedRowHeight(height: number) {
   if (!expandedRowHeight.value[currentPage.value || 0]) {
-    expandedRowHeight.value[currentPage.value || 0] = Math.max(height, 0);
+    expandedRowHeight.value[currentPage.value || 0] = Math.max(height, 0)
   } else {
-    expandedRowHeight.value[currentPage.value || 0] += height;
+    expandedRowHeight.value[currentPage.value || 0] += height
   }
 }
 
-const { currentPage, totalRowCount, pageRows } = usePagination(props);
+const { currentPage, totalRowCount, pageRows } = usePagination(props)
 
-const { selected, selectedByKey, updateSelected, onSelectAll } = useRowSelect(props);
+const { selected, selectedByKey, updateSelected, onSelectAll } = useRowSelect(props)
 function handleUpdateSelected(row: VRow) {
-  const newSelected = updateSelected(row, props.selection);
-  emit('update:selected', newSelected || []);
+  const newSelected = updateSelected(row)
+  emit('update:selected', newSelected || [])
 }
 
-const { cellBorderCls, tableBorderCls, hoverCls, stripedCls } = useTableCls(props);
+const { cellBorderCls, tableBorderCls, hoverCls, stripedCls } = useTableCls(props)
 
-const { onColResizeStart, resizerRef, rootRef, widthChanged } = useColResize();
+const { onColResizeStart, resizerRef, rootRef, widthChanged } = useColResize()
 watch(widthChanged, (newChanged) => {
   if (
     scrollLeft.value !== 0 &&
     scrollLeft.value > colWidths.value - (rootRef.value?.clientWidth || 0)
   ) {
-    scrollLeft.value = Math.max(0, scrollLeft.value + newChanged);
+    scrollLeft.value = Math.max(0, scrollLeft.value + newChanged)
   }
-});
+})
 
-const processedColumns = ref(processColumns(props.columns));
+const processedColumns = ref(processColumns(props.columns))
 watch(
   () => props.columns,
   (newCols) => (processedColumns.value = processColumns(newCols))
-);
+)
 
 function processColumns(columns: VColumn[]) {
-  return columns.map((col) => Object.assign({}, props.columnDefaults, col));
+  return columns.map((col) => Object.assign({}, props.columnDefaults, col))
 }
 
 const {
@@ -336,106 +334,106 @@ const {
   onColDragOver,
   onColDragEnd,
   onColDrop
-} = useColMove();
+} = useColMove()
 
 function handleColDrop(e: DragEvent) {
-  processedColumns.value = onColDrop(e, processedColumns.value);
+  processedColumns.value = onColDrop(e, processedColumns.value)
 }
 
 // use scrollleft to adjust the icon position based on horizontal scroll
 const dropDownStyle = computed(() => {
-  return { top: `${iconDownTop.value}px`, left: `${iconYLocation.value - scrollLeft.value}px` };
-});
+  return { top: `${iconDownTop.value}px`, left: `${iconYLocation.value - scrollLeft.value}px` }
+})
 
 const dropUpStyle = computed(() => {
-  return { top: `${iconUpTop.value}px`, left: `${iconYLocation.value - scrollLeft.value}px` };
-});
+  return { top: `${iconUpTop.value}px`, left: `${iconYLocation.value - scrollLeft.value}px` }
+})
 
-const globalFilterValue = ref('');
+const globalFilterValue = ref('')
 function filterGlobally(filter: string, rows: VRow[]): VRow[] {
-  if (!filter) return props.rows;
-  return handleGlobalFilter(filter, rows);
+  if (!filter) return props.rows
+  return handleGlobalFilter(filter, rows)
 }
 
-const filters = ref<VFilter>(props.defaultFilters);
+const filters = ref<VFilter>(props.defaultFilters)
 watch(
   () => props.defaultFilters,
   (newFilters) => (filters.value = newFilters)
-);
+)
 
 function updateFilter(field: string, val: unknown) {
-  if (val) filters.value[field] = String(val);
-  else delete filters.value[field];
+  if (val) filters.value[field] = String(val)
+  else delete filters.value[field]
 }
 
-const sorters = ref<VSorter[]>(props.defaultSorters);
+const sorters = ref<VSorter[]>(props.defaultSorters)
 watch(
   () => props.defaultSorters,
   (newSorters) => (sorters.value = newSorters)
-);
+)
 
-const { sortRows, handleSortUpdate } = useSorter();
+const { sortRows, handleSortUpdate } = useSorter()
 
 const processedRows = computed<VRow[] | Array<VRow[]>>(() => {
-  let rows = props.rows;
-  rows = sortRows(sorters.value, rows);
+  let rows = props.rows
+  rows = sortRows(sorters.value, rows)
 
   if (props.globalFilter) {
-    rows = filterGlobally(globalFilterValue.value, rows);
+    rows = filterGlobally(globalFilterValue.value, rows)
   } else {
-    rows = filterRows(filters.value, rows);
+    rows = filterRows(filters.value, rows)
   }
 
-  if (props.pagination.rowsPerPage !== 0) rows = pageRows(rows);
+  if (props.pagination.rowsPerPage !== 0) rows = pageRows(rows)
 
-  return rows;
-});
+  return rows
+})
 
 function updateSorters(e: MouseEvent, field: string): void {
-  sorters.value = handleSortUpdate(e.ctrlKey, field, sorters.value);
+  sorters.value = handleSortUpdate(e.ctrlKey, field, sorters.value)
 }
 
-const { handleFilterRows, handleGlobalFilter } = useFilter();
+const { handleFilterRows, handleGlobalFilter } = useFilter()
 
 function filterRows(filters: VFilter, rows: VRow[]): VRow[] {
   // no filters, return original rows
-  if (!Object.keys(filters).length) return props.rows;
-  return handleFilterRows(filters, rows);
+  if (!Object.keys(filters).length) return props.rows
+  return handleFilterRows(filters, rows)
 }
 
 const colWidths = computed(() => {
-  let width = 0;
-  processedColumns.value.map((col: any) => (width += col.width || 150));
-  return width;
-});
+  let width = 0
+  processedColumns.value.map((col: any) => (width += col.width || 150))
+  return width
+})
 
-const { getState, saveState, loadState } = useSaveState();
+const { getState, saveState, loadState } = useSaveState()
 
 onMounted(() => {
-  const savedState = loadState(props.stateKey);
+  const savedState = loadState(props.stateKey)
   if (savedState) {
-    sorters.value = savedState.sorters;
-    filters.value = savedState.filters;
+    sorters.value = savedState.sorters
+    filters.value = savedState.filters
 
     const newCols = savedState.columns.map((col) => {
-      const curCol = processedColumns.value.find((tmpCol) => tmpCol.name === col.name);
+      const curCol = processedColumns.value.find((tmpCol) => tmpCol.name === col.name)
       if (curCol) {
-        return Object.assign({}, curCol, col);
+        return Object.assign({}, curCol, col)
       }
-    }) as VColumn[];
+    }) as VColumn[]
 
-    processedColumns.value = newCols;
+    processedColumns.value = newCols
   }
-});
+})
 
 watch(
   [processedColumns, sorters, filters],
   ([newCols, newSorters, newFilters]) => {
-    const newState = getState(newCols, newSorters, newFilters);
-    if (newState) saveState(props.stateKey, newState);
+    const newState = getState(newCols, newSorters, newFilters)
+    if (newState) saveState(props.stateKey, newState)
   },
   { deep: true }
-);
+)
 </script>
 
 <style>

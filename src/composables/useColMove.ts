@@ -1,5 +1,5 @@
-import { VColumn } from 'src/components/types';
-import { getColIdx } from 'src/components/utils';
+import type { VColumn } from '../components/types';
+import { getColIdx } from '../components/utils';
 import { ref } from 'vue';
 
 export default function useColMove() {
