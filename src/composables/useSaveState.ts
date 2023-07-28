@@ -1,4 +1,4 @@
-import { VColumn, VFilter, VSorter, VState } from 'src/components/types';
+import type { VColumn, VFilter, VSorter, VState } from '../components/types';
 
 export default function useSaveState() {
   function getState(columns: VColumn[], sorters: VSorter[], filters: VFilter): VState {

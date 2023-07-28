@@ -1,46 +1,33 @@
 <template>
-  <div class="vdt--tbody" role="presentation">
-    <div class="vdt--tbody-clipper" role="presentation">
-      <div ref="tbodyScrollRef" class="vdt--tbody-viewport" role="presentation">
-        <table class="vdt--tbody-container" role="rowgroup" :style="tbodyContainerStyle">
-          <slot :virtual-rows="visibleRows" :start-node="startNode" />
-        </table>
-      </div>
-    </div>
-
-    <!-- fake vertical scroll -->
-    <fake-vertical-scroll :tbody-height="tbodyHeight" :scroll-top="scrollTop" @handle-scroll="handleVScrollEvent" />
+  <div class="vdt--tbody-viewport" role="presentation" @scroll="onVScroll">
+    <slot
+      :virtual-rows="visibleRows"
+      :start-node="startNode"
+      :offset-y="offsetY"
+      :table-height="tbodyHeight"
+      :spacer-style="spacerStyle"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue';
-import { VRow, VColumn } from '../types';
-import FakeVerticalScroll from './FakeVerticalScroll.vue';
-import useVirtualScroll from 'src/composables/useVirtualScroll';
+import { computed } from 'vue'
+import { VRow, VColumn } from '../types'
+import useVirtualScroll from '../../composables/useVirtualScroll'
 
 const props = defineProps<{
-  rows: VRow[];
-  columns: VColumn[];
-  rowHeight: number;
-  virtualScrollNodePadding: number;
-  rootHeight: number;
-  colWidths: number;
-  scrollLeft: number;
-  stripedRows: boolean;
-  expandedRowHeight: number;
-}>();
+  rows: VRow[]
+  columns: VColumn[]
+  rowHeight: number
+  virtualScrollNodePadding: number
+  rootHeight: number
+  colWidths: number
+  scrollLeft: number
+  stripedRows: boolean
+  expandedRowHeight: number
+}>()
 
-const { tbodyScrollRef, scrollTop, visibleRows, offsetY, startNode, tbodyHeight, onVScroll, handleVScrollEvent } =
-  useVirtualScroll(props);
+const { visibleRows, offsetY, startNode, tbodyHeight, onVScroll } = useVirtualScroll(props)
 
-onMounted(() => tbodyScrollRef.value?.addEventListener('scroll', onVScroll));
-onUnmounted(() => tbodyScrollRef.value?.removeEventListener('scroll', onVScroll));
-
-const tbodyContainerStyle = computed(() => {
-  return {
-    width: `${props.colWidths}px`,
-    transform: `translate(${-props.scrollLeft}px,${offsetY.value}px)`,
-  };
-});
+const spacerStyle = computed(() => tbodyHeight.value - visibleRows.value.length * props.rowHeight)
 </script>

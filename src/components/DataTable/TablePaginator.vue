@@ -1,7 +1,7 @@
 <template>
   <div class="row items-center">
     Rows Per Page:
-    <q-select
+    <!-- <q-select
       v-if="pagination.pageOptions"
       :model-value="pagination.rowsPerPage"
       class="q-px-sm"
@@ -10,7 +10,7 @@
       :options="pagination.pageOptions"
       options-dense
       @update:model-value="(val) => $emit('updateRowsPerPage', val)"
-    />
+    /> -->
 
     <div v-if="pagination.rowsPerPage">
       {{ endRowNum - pagination.rowsPerPage + 1 }} to {{ actualCurEnd }} of
@@ -19,29 +19,34 @@
       <span :class="`${iconCls} mdi-chevron-left`" @click="$emit('updatePage', currentPage - 1)" />
       Page {{ currentPage + 1 }}
       <span :class="`${iconCls} mdi-chevron-right`" @click="$emit('updatePage', currentPage + 1)" />
-      <span :class="`${iconCls} mdi-chevron-double-right`" @click="$emit('updatePage', totalPageNum - 1)" />
+      <span
+        :class="`${iconCls} mdi-chevron-double-right`"
+        @click="$emit('updatePage', totalPageNum - 1)"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { VPagination } from '../types';
+import { computed } from 'vue'
+import { VPagination } from '../types'
 
 const props = defineProps<{
-  currentPage: number;
-  totalPageNum: number;
-  totalRowCount: number;
-  pagination: VPagination;
-}>();
+  currentPage: number
+  totalPageNum: number
+  totalRowCount: number
+  pagination: VPagination
+}>()
 
 defineEmits<{
-  (e: 'updatePage', page: number): void;
-  (e: 'updateRowsPerPage', val: number): void;
-}>();
+  (e: 'updatePage', page: number): void
+  (e: 'updateRowsPerPage', val: number): void
+}>()
 
-const endRowNum = computed(() => props.pagination.rowsPerPage * (props.currentPage + 1));
-const actualCurEnd = computed(() => (endRowNum.value > props.totalRowCount ? props.totalRowCount : endRowNum.value));
+const endRowNum = computed(() => props.pagination.rowsPerPage * (props.currentPage + 1))
+const actualCurEnd = computed(() =>
+  endRowNum.value > props.totalRowCount ? props.totalRowCount : endRowNum.value
+)
 
-const iconCls = 'vdt--clickable mdi';
+const iconCls = 'vdt--clickable mdi'
 </script>

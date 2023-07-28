@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { VRow } from 'src/components/types';
+import type { VRow } from 'src/components/types';
 
 export default function usePagination(props: any) {
   // subtract 1 because the pages are 0-based
