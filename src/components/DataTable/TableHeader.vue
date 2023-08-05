@@ -40,19 +40,18 @@
         </template>
 
         <template v-if="col.filterable" #filter>
-          <div class="vdt--th-filter" aria-description="Type to filter column">
-            <slot
-              name="filter"
-              :column="col"
-              :filter-value="filters[col.name]"
-              :update-filter="updateFilter"
-            >
-              <vdt-input
-                :model-value="filters[col.name]"
-                @update:model-value="(val) => updateFilter(col.name, String(val))"
-              />
-            </slot>
-          </div>
+          <slot
+            name="filter"
+            :column="col"
+            :filter-value="filters[col.name]"
+            :update-filter="updateFilter"
+          >
+            <vdt-input
+              :model-value="filters[col.name]"
+              class="vdt--th-filter"
+              @update:model-value="(val) => updateFilter(col.name, String(val))"
+            />
+          </slot>
         </template>
       </header-cell>
     </tr>
@@ -60,40 +59,40 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { VRow, VColumn, VFilter, VSorter, VSelectionModes, VExtraClasses } from '../types'
-import HeaderCell from './HeaderCell.vue'
-import VdtCheckbox from './VdtCheckbox.vue'
-import VdtInput from './VdtInput.vue'
+import { computed } from 'vue';
+import type { VRow, VColumn, VFilter, VSorter, VSelectionModes, VExtraClasses } from '../types';
+import HeaderCell from './HeaderCell.vue';
+import VdtCheckbox from './VdtCheckbox.vue';
+import VdtInput from './VdtInput.vue';
 
 const props = defineProps<{
-  scrollLeft: number
-  columns: VColumn[]
-  rowHeight: number
-  resizableColumns: boolean
-  reorderableColumns: boolean
-  sorters: VSorter[]
-  filters: VFilter
-  selection: VSelectionModes
-  selected: VRow[]
-  totalRowCount: number
-  extraClasses: VExtraClasses
-  allowSelectAll: boolean
-}>()
+  scrollLeft: number;
+  columns: VColumn[];
+  rowHeight: number;
+  resizableColumns: boolean;
+  reorderableColumns: boolean;
+  sorters: VSorter[];
+  filters: VFilter;
+  selection: VSelectionModes;
+  selected: VRow[];
+  totalRowCount: number;
+  extraClasses: VExtraClasses;
+  allowSelectAll: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'updateSorter', event: MouseEvent, field: string): void
-  (e: 'updateFilter', field: string, val: string | null): void
-  (e: 'onResizeStart', event: MouseEvent, col: VColumn): void
-  (e: 'onDragStart', event: DragEvent): void
-  (e: 'onDragEnd', event: DragEvent): void
-  (e: 'onDragOver', event: DragEvent): void
-  (e: 'onDrop', event: DragEvent): void
-  (e: 'selectAll', selected: boolean): void
-}>()
+  (e: 'updateSorter', event: MouseEvent, field: string): void;
+  (e: 'updateFilter', field: string, val: string | null): void;
+  (e: 'onResizeStart', event: MouseEvent, col: VColumn): void;
+  (e: 'onDragStart', event: DragEvent): void;
+  (e: 'onDragEnd', event: DragEvent): void;
+  (e: 'onDragOver', event: DragEvent): void;
+  (e: 'onDrop', event: DragEvent): void;
+  (e: 'selectAll', selected: boolean): void;
+}>();
 
-const allSelected = computed(() => props.selected.length === props.totalRowCount)
-const selectAll = (val: boolean) => emit('selectAll', val)
+const allSelected = computed(() => props.selected.length === props.totalRowCount);
+const selectAll = (val: boolean) => emit('selectAll', val);
 
-const updateFilter = (field: string, val: string) => emit('updateFilter', field, val)
+const updateFilter = (field: string, val: string) => emit('updateFilter', field, val);
 </script>

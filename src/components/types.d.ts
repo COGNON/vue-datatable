@@ -1,6 +1,36 @@
-export type VColumn<T = unknown> = {
+export type DataTableProps = {
+  columns: VColumn[];
+  rows: VRow[];
+  height?: number;
+  rowHeight?: number;
+  virtualScrollNodePadding?: number;
+  borders?: VCellSeparators;
+  bordered?: boolean;
+  resizableColumns?: boolean;
+  reorderableColumns?: boolean;
+  highlightOnHover?: boolean;
+  stripedRows?: boolean;
+  globalFilter?: boolean;
+  defaultFilters?: VFilter;
+  defaultSorters?: VSorter[];
+  loading?: boolean;
+  loadingText?: string;
+  title?: string;
+  noDataText?: string;
+  selection?: VSelectionModes;
+  rowKey?: string;
+  hideTableBottom?: boolean;
+  extraClasses?: VExtraClasses;
+  stateKey?: string;
+  columnDefaults?: Partial<VColumn>;
+  handleExpandIcon?: boolean;
+  allowSelectAll?: boolean;
+  selected: VRow[];
+};
+
+export type VColumn<T = Record<string, any>> = {
   name: string;
-  field: string | ((row: T) => unknown);
+  field: keyof T | ((row: T) => unknown);
   header: string;
   align?: 'left' | 'right' | 'center';
   width?: number;
@@ -9,7 +39,11 @@ export type VColumn<T = unknown> = {
   filterable?: boolean;
 };
 
-export type VRow<T = any> = Record<keyof T, any>;
+export type VRow<T = Record<string, any>> = {
+  [key in keyof T]: any;
+} & {
+  index: number;
+};
 
 export type VFilter = {
   [key: string]: string;
@@ -38,17 +72,31 @@ export type VPagination = {
 };
 
 export type VExtraClasses = {
-  table?: string;
-  thead?: string;
-  headerRow?: string;
-  headerCell?: string;
-  tbody?: string;
-  row?: string;
-  cell?: string;
+  table: string;
+  thead: string;
+  headerRow: string;
+  headerCell: string;
+  tbody: string;
+  row: string;
+  cell: string;
 };
 
 export type VState = {
   columns: Pick<VColumn, 'width' | 'name'>[];
   sorters: VSorter[];
   filters: VFilter;
+};
+
+export type VirtualScrollerProps = {
+  rows: VRow[];
+  columns: VColumn[];
+  rowHeight: number;
+  virtualScrollNodePadding: number;
+  rootHeight: number;
+  colWidths: number;
+  scrollLeft: number;
+  stripedRows: boolean;
+  expandedRowHeight: number;
+  rowsPerPage: number;
+  currentPage: number;
 };

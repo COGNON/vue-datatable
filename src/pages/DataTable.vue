@@ -32,9 +32,9 @@ const selected = ref([]);
 
 const loading = ref(false);
 const pagination = ref({
-  rowsPerPage: 0
+  rowsPerPage: 0,
   // initialPage: ,
-  // pageOptions: [0, 20, 50, 100]
+  pageOptions: [0, 20, 50, 100]
 });
 
 const rows = ref(data);

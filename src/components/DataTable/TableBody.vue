@@ -25,8 +25,7 @@
       </table-row>
 
       <expand-row
-        v-if="$slots['expanded']"
-        v-show="expandedRows[row.index]"
+        v-if="$slots['expanded'] && expandedRows[row.index]"
         :row="row"
         :expanded="expandedRows[row.index] || false"
       >

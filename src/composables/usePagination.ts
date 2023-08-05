@@ -1,22 +1,8 @@
-import { ref } from 'vue';
-import type { VRow } from 'src/components/types';
+import { ref, computed } from 'vue';
+import type { DataTableProps, VPagination } from 'src/components/types';
 
-export default function usePagination(props: any) {
-  // subtract 1 because the pages are 0-based
-  const currentPage = ref(props.pagination.initialPage - 1 || 0);
-  const totalRowCount = ref(0);
+export default function usePagination(props: DataTableProps) {
+  const pagination = defineModel<VPagination>('pagination', { default: { rowsPerPage: 0 } });
 
-  function pageRows(rows: VRow[]) {
-    if (props.pagination.rowsPerPage === 0) return rows;
-    totalRowCount.value = 0;
-    const pagedRows: Array<VRow[]> = [];
-    for (let i = 0; i < rows.length; i += props.pagination.rowsPerPage) {
-      const sliced = rows.slice(i, i + props.pagination.rowsPerPage);
-      totalRowCount.value += sliced.length;
-      pagedRows.push(sliced);
-    }
-    return pagedRows;
-  }
-
-  return { currentPage, totalRowCount, pageRows };
+  return { pagination, currentPage };
 }

@@ -1,5 +1,11 @@
 <template>
-  <div class="vdt--tbody-viewport" role="presentation" @scroll="onVScroll">
+  <div
+    ref="scrollerRef"
+    :style="{ overflowY: overflowStyle }"
+    class="vdt--scroller"
+    role="presentation"
+    @scroll="onVScroll"
+  >
     <slot
       :virtual-rows="visibleRows"
       :start-node="startNode"
@@ -11,23 +17,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { VRow, VColumn } from '../types'
-import useVirtualScroll from '../../composables/useVirtualScroll'
+import { computed, watch } from 'vue';
+import { VirtualScrollerProps } from '../types';
+import useVirtualScroll from '../../composables/useVirtualScroll';
 
-const props = defineProps<{
-  rows: VRow[]
-  columns: VColumn[]
-  rowHeight: number
-  virtualScrollNodePadding: number
-  rootHeight: number
-  colWidths: number
-  scrollLeft: number
-  stripedRows: boolean
-  expandedRowHeight: number
-}>()
+const props = defineProps<VirtualScrollerProps>();
 
-const { visibleRows, offsetY, startNode, tbodyHeight, onVScroll } = useVirtualScroll(props)
+watch(
+  () => props.currentPage,
+  () => (scrollerRef.value.scrollTop = 0)
+);
 
-const spacerStyle = computed(() => tbodyHeight.value - visibleRows.value.length * props.rowHeight)
+const { visibleRows, scrollerRef, offsetY, startNode, tbodyHeight, onVScroll } =
+  useVirtualScroll(props);
+
+const overflowStyle = computed(() =>
+  props.rowsPerPage && tbodyHeight.value === scrollerRef.value?.clientHeight ? 'hidden' : 'auto'
+);
+
+const spacerStyle = computed(() => {
+  // virtual scroll calculation is the total height of the rows
+  // minus the total visible row height and any expanded row height
+  return tbodyHeight.value - visibleRows.value.length * props.rowHeight - props.expandedRowHeight;
+});
 </script>
+
+<style scoped>
+.vdt--scroller {
+  position: relative;
+  overflow-x: auto;
+}
+</style>
