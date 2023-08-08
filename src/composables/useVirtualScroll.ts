@@ -10,8 +10,6 @@ export default function useVirtualScroll(props: VirtualScrollerProps) {
     scrollTop.value = target.scrollTop;
   };
 
-  const processedRows = computed(() => props.rows.map((r, idx) => ({ ...r, index: idx })));
-
   const tbodyHeight = computed(() => {
     if (props.rowsPerPage) {
       // if paging, return the total height of VISIBLE rows
@@ -25,17 +23,15 @@ export default function useVirtualScroll(props: VirtualScrollerProps) {
       );
     }
     // otherwise, return the height of ALL rows + any expanded rows
-    return processedRows.value.length * props.rowHeight + props.expandedRowHeight;
+    return props.rows.length * props.rowHeight + props.expandedRowHeight;
   });
 
-  const maxVisibleCount = computed(() =>
-    Math.ceil((scrollerRef.value?.clientHeight || props.rootHeight) / props.rowHeight)
-  );
+  const maxVisibleCount = computed(() => Math.ceil(props.rootHeight / props.rowHeight));
 
   const startNode = ref(0);
   const offsetY = computed(() => {
     if (props.rowsPerPage) return 0;
-    return startNode.value * props.rowHeight;
+    return Math.max(0, startNode.value - props.virtualScrollNodePadding) * props.rowHeight;
   });
 
   watch(scrollTop, () => {
@@ -58,11 +54,11 @@ export default function useVirtualScroll(props: VirtualScrollerProps) {
       // if paging, get the row to start at, which is the current page * the rows per page
       const curStartIdx = props.currentPage * props.rowsPerPage;
       // then the row to end at is the start + rows per page
-      return processedRows.value.slice(curStartIdx, curStartIdx + props.rowsPerPage);
+      return props.rows.slice(curStartIdx, curStartIdx + props.rowsPerPage);
     }
 
     // otherwise, get the current row slice based on startNode
-    return processedRows.value.slice(
+    return props.rows.slice(
       Math.max(0, startNode.value - props.virtualScrollNodePadding),
       startNode.value + maxVisibleCount.value + props.virtualScrollNodePadding
     );

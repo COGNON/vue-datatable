@@ -75,7 +75,7 @@ export default function useColMove() {
     const root = (e.target as HTMLElement).closest('.vdt--root-wrapper') as HTMLElement;
     if (!root) return;
 
-    const left = targetCol.offsetLeft + root.offsetLeft;
+    const left = targetCol.offsetLeft;
     const top = (targetCol.offsetParent as HTMLElement).offsetTop;
 
     const colWidth = targetCol.offsetWidth;
@@ -110,6 +110,6 @@ export default function useColMove() {
     onColDragStart,
     onColDragOver,
     onColDragEnd,
-    onColDrop,
+    onColDrop
   };
 }

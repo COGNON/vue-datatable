@@ -58,21 +58,21 @@ defineProps<{ label?: string }>();
       color: #00897b;
       transform: translateY(-24px) scale(0.75);
     }
-    .clear-button {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      border: none;
-      background: none;
-      cursor: pointer;
-      &:hover {
-        color: #ff5252;
-      }
+  }
+  .clear-button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: none;
+    cursor: pointer;
+    &:hover {
+      color: #ff5252;
     }
-    .material-icons {
-      color: #fff;
-    }
+  }
+  .material-icons {
+    color: #fff;
   }
 }
 </style>

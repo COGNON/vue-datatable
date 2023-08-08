@@ -9,6 +9,13 @@ export default function useExpandedRows() {
   }
 
   const expandedRowHeight = ref<number[]>([]);
+  function handleExpandedRowHeight(height: number, currentPage = 0) {
+    if (!expandedRowHeight.value[currentPage]) {
+      expandedRowHeight.value[currentPage] = Math.max(height, 0);
+    } else {
+      expandedRowHeight.value[currentPage] += height;
+    }
+  }
 
-  return { expandedRows, expandedRowHeight, updateExpanded };
+  return { expandedRows, expandedRowHeight, handleExpandedRowHeight, updateExpanded };
 }

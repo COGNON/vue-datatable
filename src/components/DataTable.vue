@@ -5,23 +5,11 @@
     role="presentation"
     :style="{ height: `${height}px` }"
   >
-    <div v-if="loading" class="vdt-loading">
+    <div v-show="loading" class="vdt-loading">
       <slot name="loading">{{ loadingText }}</slot>
     </div>
 
     <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer" />
-    <div v-if="reorderableColumns">
-      <div
-        ref="dropColIndicatorDown"
-        class="mdi mdi-arrow-down-bold vdt--drop-indicator"
-        :style="dropDownStyle"
-      />
-      <div
-        ref="dropColIndicatorUp"
-        class="mdi mdi-arrow-up-bold vdt--drop-indicator"
-        :style="dropUpStyle"
-      />
-    </div>
 
     <div v-if="globalFilter" class="vdt-global-filter">
       <slot
@@ -44,6 +32,15 @@
     </div>
 
     <div class="vdt--root">
+      <div v-if="reorderableColumns">
+        <div ref="dropColIndicatorDown" class="vdt--drop-indicator" :style="dropDownStyle">
+          <svg-icon type="mdi" :path="mdiArrowDownBold" />
+        </div>
+        <div ref="dropColIndicatorUp" class="vdt--drop-indicator" :style="dropUpStyle">
+          <svg-icon type="mdi" :path="mdiArrowUpBold" />
+        </div>
+      </div>
+
       <virtual-scroller
         v-slot="{ virtualRows, offsetY, tableHeight, spacerStyle }"
         :rows="processedRows"
@@ -105,7 +102,7 @@
               :expanded-rows="expandedRows"
               :extra-classes="extraClasses"
               :handle-expand-icon="handleExpandIcon"
-              @update-expanded-height="(val) => (expandedRowHeight[0] += val)"
+              @update-expanded-height="(h) => handleExpandedRowHeight(h, currentPage)"
               @update-selected="handleUpdateSelected"
               @update-expanded="updateExpanded"
               @on-cell-click="(e, col, row) => $emit('onCellClick', e, col, row)"
@@ -174,6 +171,8 @@ import useRowSelect from '../composables/useRowSelect';
 import useExpandedRows from '../composables/useExpandedRows';
 import useSaveState from '../composables/useSaveState';
 import VdtInput from './DataTable/VdtInput.vue';
+import SvgIcon from '@jamescoyle/vue-icon';
+import { mdiArrowUpBold, mdiArrowDownBold } from '@mdi/js';
 
 const props = withDefaults(defineProps<DataTableProps>(), {
   height: 600,
@@ -196,9 +195,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
   stateKey: '',
   handleExpandIcon: false,
   allowSelectAll: true,
-  defaultFilters: () => {
-    return {};
-  },
+  defaultFilters: () => ({}),
   defaultSorters: () => [],
   extraClasses: () => {
     return { table: '', thead: '', headerRow: '', headerCell: '', tbody: '', row: '', cell: '' };
@@ -239,14 +236,8 @@ function updatePage(page: number) {
   currentPage.value = page < 0 ? 0 : Math.min(page, totalPageNum.value);
 }
 
-const { expandedRows, expandedRowHeight, updateExpanded } = useExpandedRows();
-function handleExpandedRowHeight(height: number) {
-  if (!expandedRowHeight.value[currentPage.value || 0]) {
-    expandedRowHeight.value[currentPage.value || 0] = Math.max(height, 0);
-  } else {
-    expandedRowHeight.value[currentPage.value || 0] += height;
-  }
-}
+const { expandedRows, expandedRowHeight, updateExpanded, handleExpandedRowHeight } =
+  useExpandedRows();
 
 const { selected, selectedByKey, updateSelected, onSelectAll } = useRowSelect(props);
 function handleUpdateSelected(row: VRow) {
@@ -326,9 +317,10 @@ watch(
 
 const { sortRows, handleSortUpdate } = useSorter();
 
+const initialRows = computed(() => props.rows.map((r, idx) => ({ ...r, index: idx })));
+
 const processedRows = computed<VRow[]>(() => {
-  let rows = props.rows;
-  rows = sortRows(sorters.value, rows);
+  let rows = sortRows(sorters.value, [...initialRows.value]);
 
   if (props.globalFilter) {
     rows = filterGlobally(globalFilterValue.value, rows);
@@ -515,14 +507,6 @@ watch(
   padding: 0px;
   cursor: col-resize;
   border: 1px solid transparent;
-}
-.vdt--th-label,
-.vdt--th-label-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.vdt--th-label {
-  align-items: center;
 }
 .vdt--tbody {
   position: relative;

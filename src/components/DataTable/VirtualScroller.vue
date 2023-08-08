@@ -32,7 +32,7 @@ const { visibleRows, scrollerRef, offsetY, startNode, tbodyHeight, onVScroll } =
   useVirtualScroll(props);
 
 const overflowStyle = computed(() =>
-  props.rowsPerPage && tbodyHeight.value === scrollerRef.value?.clientHeight ? 'hidden' : 'auto'
+  props.rowsPerPage && tbodyHeight.value === props.rootHeight ? 'hidden' : 'auto'
 );
 
 const spacerStyle = computed(() => {

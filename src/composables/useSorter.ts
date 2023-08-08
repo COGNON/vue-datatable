@@ -7,7 +7,9 @@ export default function useSorter() {
 
     // sort by num in order, then convert fields into an array
     // descending fields are prepended with a '-'
-    const fields = sorters.map((sorter) => (sorter.dir === 'desc' ? `-${sorter.field}` : sorter.field));
+    const fields = sorters.map((sorter) =>
+      sorter.dir === 'desc' ? `-${sorter.field}` : sorter.field
+    );
 
     return rows.sort(multiSort(fields));
   };

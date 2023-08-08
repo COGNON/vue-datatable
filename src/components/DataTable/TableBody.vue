@@ -28,6 +28,7 @@
         v-if="$slots['expanded'] && expandedRows[row.index]"
         :row="row"
         :expanded="expandedRows[row.index] || false"
+        :col-num="columns.length"
       >
         <template #expanded="slotProps">
           <slot name="expanded" v-bind="slotProps || {}" />
