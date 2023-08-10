@@ -1,4 +1,5 @@
-export type DataTableProps = {
+export type DataTableProps<T = Record<string, string>> = {
+  rowKey?: keyof T;
   columns: VColumn[];
   rows: VRow[];
   height?: number;
@@ -18,7 +19,6 @@ export type DataTableProps = {
   title?: string;
   noDataText?: string;
   selection?: VSelectionModes;
-  rowKey?: string;
   hideTableBottom?: boolean;
   extraClasses?: VExtraClasses;
   stateKey?: string;
@@ -28,15 +28,18 @@ export type DataTableProps = {
   selected: VRow[];
 };
 
-export type VColumn<T = Record<string, any>> = {
-  name: string;
-  field: keyof T | ((row: T) => unknown);
-  header: string;
+export type VColumn<T = Record<string, string>> = {
+  colId?: string;
+  field?: keyof T | ((row: T) => unknown);
+  header?: string;
   align?: 'left' | 'right' | 'center';
   width?: number;
   resizable?: boolean;
   sortable?: boolean;
   filterable?: boolean;
+  sort?: SortDir;
+  filter?: string;
+  checkboxColumn?: boolean;
 };
 
 export type VRow<T = Record<string, any>> = {
@@ -51,11 +54,12 @@ export type VFilter = {
 
 export type VSorter = {
   field: string;
-  dir: 'asc' | 'desc';
+  dir: SortDir;
 };
 
 export type VCellSeparators = 'row' | 'column' | 'cell' | 'none';
 export type VSelectionModes = 'single' | 'multiple' | 'none';
+export type SortDir = 'asc' | 'desc';
 
 export type VSelectedRow = {
   [key: string]: boolean;
@@ -82,7 +86,7 @@ export type VExtraClasses = {
 };
 
 export type VState = {
-  columns: Pick<VColumn, 'width' | 'name'>[];
+  columns: Pick<VColumn, 'width' | 'colId'>[];
   sorters: VSorter[];
   filters: VFilter;
 };

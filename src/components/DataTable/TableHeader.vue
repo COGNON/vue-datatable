@@ -14,7 +14,7 @@
 
       <header-cell
         v-for="(col, colIdx) in columns"
-        :key="col.name"
+        :key="col.colId"
         :col="col"
         :aria-colindex="colIdx + 1"
         :style="{ width: `${col.width}px`, textAlign: col.align }"
@@ -22,7 +22,7 @@
         :resizable-columns="resizableColumns"
         :draggable="reorderableColumns ? true : null"
         :sorters="sorters"
-        @update-sorter="(e) => $emit('updateSorter', e, col.name)"
+        @update-sorter="(e) => $emit('updateSorter', e, col.colId)"
         @on-resize-start="(e: MouseEvent) => $emit('onResizeStart', e, col)"
         @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
         v-on="reorderableColumns ? {
@@ -32,8 +32,8 @@
             } : {}"
       >
         <!-- specific header cell slot takes precedence -->
-        <template v-if="$slots[`header-cell-${col.name}`]" #header-cell="slotProps">
-          <slot :name="`header-cell-${col.name}`" v-bind="slotProps" :col-index="colIdx" />
+        <template v-if="$slots[`header-cell-${col.colId}`]" #header-cell="slotProps">
+          <slot :name="`header-cell-${col.colId}`" v-bind="slotProps" :col-index="colIdx" />
         </template>
         <template v-else-if="$slots['header-cell']" #header-cell="slotProps">
           <slot name="header-cell" v-bind="slotProps" :col-index="colIdx" />
@@ -43,13 +43,13 @@
           <slot
             name="filter"
             :column="col"
-            :filter-value="filters[col.name]"
+            :filter-value="filters[col.colId]"
             :update-filter="updateFilter"
           >
             <vdt-input
-              :model-value="filters[col.name]"
+              :model-value="filters[col.colId]"
               class="vdt--th-filter"
-              @update:model-value="(val) => updateFilter(col.name, String(val))"
+              @update:model-value="(val) => updateFilter(col.colId, String(val))"
             />
           </slot>
         </template>
@@ -67,7 +67,7 @@ import VdtInput from './VdtInput.vue';
 
 const props = defineProps<{
   scrollLeft: number;
-  columns: VColumn[];
+  columns: Required<VColumn>[];
   rowHeight: number;
   resizableColumns: boolean;
   reorderableColumns: boolean;

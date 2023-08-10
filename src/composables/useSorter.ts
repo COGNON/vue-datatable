@@ -1,7 +1,18 @@
-import type { VSorter, VRow } from '../components/types';
+import { ref, watch } from 'vue';
+import type { VSorter, VRow, DataTableProps } from '../components/types';
 import { findSorterIndex } from '../components/utils';
 
-export default function useSorter() {
+export default function useSorter(props: DataTableProps) {
+  const sorters = ref<VSorter[]>(props.defaultSorters);
+  watch(
+    () => props.defaultSorters,
+    (newSorters) => (sorters.value = newSorters)
+  );
+
+  function updateSorters(e: MouseEvent, field: string): void {
+    sorters.value = handleSortUpdate(e.ctrlKey, field, sorters.value);
+  }
+
   const sortRows = (sorters: VSorter[], rows: VRow[]): VRow[] => {
     if (!sorters.length) return rows;
 
@@ -73,5 +84,5 @@ export default function useSorter() {
     return sorters;
   };
 
-  return { sortRows, handleSortUpdate };
+  return { sorters, sortRows, handleSortUpdate, updateSorters };
 }

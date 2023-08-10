@@ -1,5 +1,5 @@
 <template>
-  <th class="vdt--th" tabindex="-1" :name="col.name">
+  <th class="vdt--th" tabindex="-1" :name="col.colId">
     <div
       v-if="resizableColumns && col.resizable"
       class="vdt--th-resizer"
@@ -43,7 +43,7 @@ import SvgIcon from '@jamescoyle/vue-icon';
 import { mdiSortAscending, mdiSortDescending } from '@mdi/js';
 
 const props = defineProps<{
-  col: VColumn;
+  col: Required<VColumn>;
   resizableColumns: boolean;
   sorters: VSorter[];
 }>();
@@ -53,7 +53,7 @@ defineEmits<{
   (e: 'onResizeStart', event: MouseEvent): void;
 }>();
 
-const sorterIdx = computed(() => findSorterIndex(props.sorters, props.col.name));
+const sorterIdx = computed(() => findSorterIndex(props.sorters, props.col.colId));
 const sorterIcon = computed(() => {
   if (sorterIdx.value === -1) return null;
   return props.sorters[sorterIdx.value]['dir'] === 'asc' ? mdiSortAscending : mdiSortDescending;

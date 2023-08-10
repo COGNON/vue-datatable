@@ -7,13 +7,13 @@
         :columns="columns"
         :row-height="rowHeight"
         :selection="selection"
-        :selected="selected[row.index] || false"
-        :expanded="expandedRows[row.index] || false"
+        :selected="selected[row[rowKey]] || false"
+        :expanded="expandedRows[row[rowKey]] || false"
         :extra-classes="extraClasses"
         :handle-expand-icon="handleExpandIcon"
         @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
         @update-selected="$emit('updateSelected', row)"
-        @update-expanded="(idx) => $emit('updateExpanded', idx)"
+        @update-expanded="(idx) => $emit('updateExpanded', row)"
         @click="(e: MouseEvent) => $emit('onRowClick',e,row)"
         @dbl-click="(e: MouseEvent) => $emit('onRowDblClick',e,row)"
         @on-cell-click="(e, col) => $emit('onCellClick', e, col, row)"
@@ -25,9 +25,9 @@
       </table-row>
 
       <expand-row
-        v-if="$slots['expanded'] && expandedRows[row.index]"
+        v-if="$slots['expanded'] && expandedRows[row[rowKey]]"
         :row="row"
-        :expanded="expandedRows[row.index] || false"
+        :expanded="expandedRows[row[rowKey]] || false"
         :col-num="columns.length"
       >
         <template #expanded="slotProps">
@@ -52,6 +52,7 @@ import ExpandRow from './ExpandRow.vue';
 
 defineProps<{
   rows: VRow[];
+  rowKey: string;
   columns: VColumn[];
   rowHeight: number;
   colWidths: number;
@@ -65,7 +66,7 @@ defineProps<{
 defineEmits<{
   (e: 'updateExpandedHeight', changeHeight: number): void;
   (e: 'updateSelected', row: VRow): void;
-  (e: 'updateExpanded', index: number): void;
+  (e: 'updateExpanded', row: VRow): void;
   (e: 'onRowClick', event: MouseEvent, row: VRow): void;
   (e: 'onRowDblClick', event: MouseEvent, row: VRow): void;
   (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void;

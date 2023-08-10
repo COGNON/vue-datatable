@@ -1,19 +1,19 @@
-import type { VSelectedRow, VRow, VSelectionModes } from 'src/components/types';
+import type { VSelectedRow, VRow, VSelectionModes, DataTableProps } from 'src/components/types';
 import { ref } from 'vue';
 
-type Props = { rows: VRow[] };
-
-export default function useRowSelect(props: Props) {
+export default function useRowSelect(props: DataTableProps) {
   const selected = ref<VRow[]>([]);
   const selectedByKey = ref<VSelectedRow>({});
 
   function updateSelected(row: VRow, selection: VSelectionModes) {
-    const keyVal = row.index;
+    if (!props.rowKey) return [];
+
+    const keyVal = row[props.rowKey];
 
     if (selection === 'single') {
       // replace selections with the given row
       selected.value = [row];
-      selectedByKey.value = { [row.index]: true };
+      selectedByKey.value = { [keyVal]: true };
     } else {
       if (selectedByKey.value[keyVal]) {
         // row was previously selected
@@ -34,10 +34,12 @@ export default function useRowSelect(props: Props) {
   }
 
   function onSelectAll(isAllSelected: boolean) {
+    if (!props.rowKey) return;
+
     if (isAllSelected) {
       // spread to remove reactivity
       selected.value = [...props.rows];
-      props.rows.forEach((row, idx) => (selectedByKey.value[idx] = true));
+      props.rows.forEach((row) => (selectedByKey.value[row[props.rowKey]] = true));
     } else {
       // replace object & array with empty
       selected.value = [];

@@ -3,13 +3,11 @@
     ref="rootRef"
     :class="`vdt--root-wrapper ${tableBorderCls} ${extraClasses.table || ''}`"
     role="presentation"
-    :style="{ height: `${height}px` }"
   >
+    <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer" />
     <div v-show="loading" class="vdt-loading">
       <slot name="loading">{{ loadingText }}</slot>
     </div>
-
-    <div v-if="resizableColumns" ref="resizerRef" class="vdt--resizer" />
 
     <div v-if="globalFilter" class="vdt-global-filter">
       <slot
@@ -31,7 +29,7 @@
       </slot>
     </div>
 
-    <div class="vdt--root">
+    <div class="vdt--root" :style="{ height: `${height}px` }">
       <div v-if="reorderableColumns">
         <div ref="dropColIndicatorDown" class="vdt--drop-indicator" :style="dropDownStyle">
           <svg-icon type="mdi" :path="mdiArrowDownBold" />
@@ -60,7 +58,7 @@
           :aria-multiselectable="true"
           :aria-rowcount="rows.length"
           :class="[cellBorderCls, hoverCls, stripedCls, 'vdt--table']"
-          :style="{ height: `${tableHeight}px`, width: `${colWidths}px` }"
+          :style="{ height: `${tableHeight}px`, minHeight: `${height}px`, width: `${colWidths}px` }"
         >
           <table-header
             :columns="processedColumns"
@@ -101,6 +99,7 @@
               :selected="selectedByKey"
               :expanded-rows="expandedRows"
               :extra-classes="extraClasses"
+              :row-key="rowKey"
               :handle-expand-icon="handleExpandIcon"
               @update-expanded-height="(h) => handleExpandedRowHeight(h, currentPage)"
               @update-selected="handleUpdateSelected"
@@ -118,13 +117,16 @@
             <tbody :style="{ height: `${spacerStyle}px` }" />
           </template>
 
-          <tbody v-else class="vdt-no-data">
-            <tr>
-              <td :colspan="processedColumns.length">
-                <slot name="noData">{{ noDataText }}</slot>
-              </td>
-            </tr>
-          </tbody>
+          <template v-else>
+            <tbody class="vdt-no-data">
+              <tr>
+                <td :colspan="processedColumns.length">
+                  <slot name="noData">{{ noDataText }}</slot>
+                </td>
+              </tr>
+            </tbody>
+            <tbody :style="{ height: `${spacerStyle}px` }" />
+          </template>
         </table>
       </virtual-scroller>
     </div>
@@ -157,7 +159,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { VRow, VColumn, VFilter, VSorter, VPagination, DataTableProps } from './types';
+import { VRow, VColumn, VPagination, DataTableProps } from './types';
 import TableHeader from './DataTable/TableHeader.vue';
 import VirtualScroller from './DataTable/VirtualScroller.vue';
 import TableBody from './DataTable/TableBody.vue';
@@ -176,7 +178,7 @@ import { mdiArrowUpBold, mdiArrowDownBold } from '@mdi/js';
 
 const props = withDefaults(defineProps<DataTableProps>(), {
   height: 600,
-  rowHeight: 28,
+  rowHeight: 37,
   virtualScrollNodePadding: 10,
   borders: 'none',
   bordered: false,
@@ -212,12 +214,11 @@ const props = withDefaults(defineProps<DataTableProps>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void;
-  (e: 'onCellDblClick', event: MouseEvent, col: VColumn, row: VRow): void;
-  (e: 'onRowClick', event: MouseEvent, row: VRow): void;
-  (e: 'onRowDblClick', event: MouseEvent, row: VRow): void;
-  (e: 'update:pagination', newPagination: VPagination): void;
-  (e: 'update:selected', newSelected: VRow[]): void;
+  onCellClick: [event: MouseEvent, col: VColumn, row: VRow];
+  onCellDblClick: [event: MouseEvent, col: VColumn, row: VRow];
+  onRowClick: [event: MouseEvent, row: VRow];
+  onRowDblClick: [event: MouseEvent, row: VRow];
+  'update:selected': [newSelected: VRow[]];
 }>();
 
 const scrollLeft = ref(0);
@@ -237,7 +238,7 @@ function updatePage(page: number) {
 }
 
 const { expandedRows, expandedRowHeight, updateExpanded, handleExpandedRowHeight } =
-  useExpandedRows();
+  useExpandedRows(props);
 
 const { selected, selectedByKey, updateSelected, onSelectAll } = useRowSelect(props);
 function handleUpdateSelected(row: VRow) {
@@ -257,14 +258,34 @@ watch(widthChanged, (newChanged) => {
   }
 });
 
+const { sorters, updateSorters, sortRows, handleSortUpdate } = useSorter(props);
+const { handleFilterRows, handleGlobalFilter, updateFilter, filters, globalFilterValue } =
+  useFilter(props);
+
 const processedColumns = ref(processColumns(props.columns));
 watch(
   () => props.columns,
   (newCols) => (processedColumns.value = processColumns(newCols))
 );
 
-function processColumns(columns: VColumn[]) {
-  return columns.map((col) => Object.assign({}, props.columnDefaults, col));
+function processColumns(columns: VColumn[]): Required<VColumn>[] {
+  const cols = columns.map((col, idx) => {
+    if (col.sort) {
+      handleSortUpdate(props.selection === 'multiple', col.field, sorters.value);
+    }
+
+    if (col.filter) {
+      updateFilter(col.field, col.filter);
+    }
+
+    const colId = col.colId
+      ? col.colId
+      : typeof col.field === 'string'
+      ? col.field
+      : `column-${idx}`;
+    return Object.assign({ colId: colId }, props.columnDefaults, col) as Required<VColumn>;
+  });
+  return cols;
 }
 
 const {
@@ -292,56 +313,20 @@ const dropUpStyle = computed(() => {
   return { top: `${iconUpTop.value}px`, left: `${iconYLocation.value - scrollLeft.value}px` };
 });
 
-const globalFilterValue = ref('');
-function filterGlobally(filter: string, rows: VRow[]): VRow[] {
-  if (!filter) return props.rows;
-  return handleGlobalFilter(filter, rows);
-}
-
-const filters = ref<VFilter>(props.defaultFilters);
-watch(
-  () => props.defaultFilters,
-  (newFilters) => (filters.value = newFilters)
-);
-
-function updateFilter(field: string, val: unknown) {
-  if (val) filters.value[field] = String(val);
-  else delete filters.value[field];
-}
-
-const sorters = ref<VSorter[]>(props.defaultSorters);
-watch(
-  () => props.defaultSorters,
-  (newSorters) => (sorters.value = newSorters)
-);
-
-const { sortRows, handleSortUpdate } = useSorter();
-
-const initialRows = computed(() => props.rows.map((r, idx) => ({ ...r, index: idx })));
+const indexRows = (rows: VRow[]) => rows.map((r, idx) => ({ ...r, index: idx }));
 
 const processedRows = computed<VRow[]>(() => {
-  let rows = sortRows(sorters.value, [...initialRows.value]);
+  let rows = [...props.rows];
+  rows = sortRows(sorters.value, rows);
 
   if (props.globalFilter) {
-    rows = filterGlobally(globalFilterValue.value, rows);
+    rows = handleGlobalFilter(globalFilterValue.value, rows);
   } else {
-    rows = filterRows(filters.value, rows);
+    rows = handleFilterRows(filters.value, rows);
   }
 
-  return rows;
+  return indexRows(rows);
 });
-
-function updateSorters(e: MouseEvent, field: string): void {
-  sorters.value = handleSortUpdate(e.ctrlKey, field, sorters.value);
-}
-
-const { handleFilterRows, handleGlobalFilter } = useFilter();
-
-function filterRows(filters: VFilter, rows: VRow[]): VRow[] {
-  // no filters, return original rows
-  if (!Object.keys(filters).length) return props.rows;
-  return handleFilterRows(filters, rows);
-}
 
 const colWidths = computed(() => {
   let width = 0;
@@ -349,33 +334,33 @@ const colWidths = computed(() => {
   return width;
 });
 
-const { getState, saveState, loadState } = useSaveState();
+// const { getState, saveState, loadState } = useSaveState();
 
-onMounted(() => {
-  const savedState = loadState(props.stateKey);
-  if (savedState) {
-    sorters.value = savedState.sorters;
-    filters.value = savedState.filters;
+// onMounted(() => {
+//   const savedState = loadState(props.stateKey);
+//   if (savedState) {
+//     sorters.value = savedState.sorters;
+//     filters.value = savedState.filters;
 
-    const newCols = savedState.columns.map((col) => {
-      const curCol = processedColumns.value.find((tmpCol) => tmpCol.name === col.name);
-      if (curCol) {
-        return Object.assign({}, curCol, col);
-      }
-    }) as VColumn[];
+//     const newCols = savedState.columns.map((col) => {
+//       const curCol = processedColumns.value.find((tmpCol) => tmpCol.colId === col.colId);
+//       if (curCol) {
+//         return Object.assign({}, curCol, col);
+//       }
+//     }) as Required<VColumn>[];
 
-    processedColumns.value = newCols;
-  }
-});
+//     processedColumns.value = newCols;
+//   }
+// });
 
-watch(
-  [processedColumns, sorters, filters],
-  ([newCols, newSorters, newFilters]) => {
-    const newState = getState(newCols, newSorters, newFilters);
-    if (newState) saveState(props.stateKey, newState);
-  },
-  { deep: true }
-);
+// watch(
+//   [processedColumns, sorters, filters],
+//   ([newCols, newSorters, newFilters]) => {
+//     const newState = getState(newCols, newSorters, newFilters);
+//     if (newState) saveState(props.stateKey, newState);
+//   },
+//   { deep: true }
+// );
 </script>
 
 <style>
@@ -413,7 +398,7 @@ watch(
   z-index: 10;
   top: 0px;
   display: none;
-  border: 1px solid var(--q-accent);
+  border: 1px solid magenta;
 }
 .vdt--drop-indicator {
   position: absolute;

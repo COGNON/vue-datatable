@@ -31,11 +31,14 @@ watch(
 const { visibleRows, scrollerRef, offsetY, startNode, tbodyHeight, onVScroll } =
   useVirtualScroll(props);
 
-const overflowStyle = computed(() =>
-  props.rowsPerPage && tbodyHeight.value === props.rootHeight ? 'hidden' : 'auto'
-);
+// hides the vertical scrollbar if rows don't go beyond the min height
+const overflowStyle = computed(() => (tbodyHeight.value <= props.rootHeight ? 'hidden' : 'auto'));
 
 const spacerStyle = computed(() => {
+  if (tbodyHeight.value <= props.rootHeight) {
+    // adjust spacer height based on the minimum height if needed
+    return props.rootHeight - visibleRows.value.length * props.rowHeight;
+  }
   // virtual scroll calculation is the total height of the rows
   // minus the total visible row height and any expanded row height
   return tbodyHeight.value - visibleRows.value.length * props.rowHeight - props.expandedRowHeight;

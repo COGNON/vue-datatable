@@ -27,6 +27,21 @@ defineProps<{ label?: string }>();
   display: flex;
   position: relative;
   align-items: center;
+  font-size: 16px;
+  outline: 1px solid #ffffff80;
+  padding: 2px;
+  border-radius: 5px;
+  transition: all 0.2s ease-out;
+  height: 20px;
+  &:focus {
+    border-color: #00897b;
+  }
+  &:focus + label,
+  &:not(:placeholder-shown) + label {
+    font-size: 12px;
+    color: #00897b;
+    transform: translateY(-24px) scale(0.75);
+  }
 
   label {
     position: absolute;
@@ -41,29 +56,13 @@ defineProps<{ label?: string }>();
   }
   input {
     width: 100%;
-    background-color: #222;
+    background-color: var(--vt-c-black);
+    appearance: none;
     border: none;
+    outline: none;
     color: #fff;
-    font-size: 16px;
-    outline: 1px solid #ffffff80;
-    padding: 2px;
-    border-radius: 5px;
-    transition: all 0.2s ease-out;
-    &:focus {
-      border-color: #00897b;
-    }
-    &:focus + label,
-    &:not(:placeholder-shown) + label {
-      font-size: 12px;
-      color: #00897b;
-      transform: translateY(-24px) scale(0.75);
-    }
   }
   .clear-button {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
     border: none;
     background: none;
     cursor: pointer;

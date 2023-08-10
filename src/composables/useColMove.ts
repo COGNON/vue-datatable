@@ -15,7 +15,7 @@ export default function useColMove() {
     }
   };
 
-  const onColDrop = (e: DragEvent, columns: VColumn[]): VColumn[] => {
+  const onColDrop = (e: DragEvent, columns: Required<VColumn>[]): Required<VColumn>[] => {
     e.preventDefault();
     e.stopPropagation();
 

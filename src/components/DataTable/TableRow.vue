@@ -28,8 +28,8 @@
         @on-cell-dbl-click="(e) => $emit('onCellDblClick', e, col)"
       >
         <!-- specific body cell slot takes precedence -->
-        <template v-if="$slots[`body-cell-${col.name}`]" #body-cell="slotProps">
-          <slot :name="`body-cell-${col.name}`" v-bind="slotProps" :row-index="row.index" />
+        <template v-if="$slots[`body-cell-${col.colId}`]" #body-cell="slotProps">
+          <slot :name="`body-cell-${col.colId}`" v-bind="slotProps" :row-index="row.index" />
         </template>
         <template v-else-if="$slots['body-cell']" #body-cell="slotProps">
           <slot name="body-cell" v-bind="slotProps" :row-index="row.index" />
@@ -47,7 +47,7 @@ import VdtCheckbox from './VdtCheckbox.vue';
 
 const props = defineProps<{
   row: VRow;
-  columns: VColumn[];
+  columns: Required<VColumn>[];
   rowHeight: number;
   selection: VSelectionModes;
   selected: boolean;
@@ -59,12 +59,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'updateExpandedHeight', changeHeight: number): void;
   (e: 'updateSelected'): void;
-  (e: 'updateExpanded', index: number): void;
+  (e: 'updateExpanded', row: VRow): void;
   (e: 'onCellClick', event: MouseEvent, col: VColumn): void;
   (e: 'onCellDblClick', event: MouseEvent, col: VColumn): void;
 }>();
 
-const expandRow = () => emit('updateExpanded', props.row.index);
+const expandRow = () => emit('updateExpanded', props.row);
 const expandIcon = computed(() => (props.expanded ? 'mdi-minus' : 'mdi-plus'));
 
 const selectRow = () => emit('updateSelected');

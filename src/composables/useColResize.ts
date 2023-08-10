@@ -17,7 +17,7 @@ export default function useColResize() {
     e.preventDefault();
 
     resizingCol.value = true;
-    x = e.clientX;
+    x = e.clientX - rootRef.value?.offsetLeft;
     curColResizing = col;
     curColEl = (e.target as HTMLElement).parentElement;
 
@@ -28,11 +28,13 @@ export default function useColResize() {
   const onColResizeMove = (e: MouseEvent) => {
     if (!(rootRef.value && resizerRef.value)) return;
     e.preventDefault();
-    diffX = e.clientX - x;
+    diffX = e.clientX - x - rootRef.value?.offsetLeft;
 
     resizerRef.value.setAttribute(
       'style',
-      ` height: ${rootRef.value.clientHeight}px; left: ${e.pageX}px; top:${rootRef.value.offsetTop}px; display:block;`
+      ` height: ${rootRef.value.clientHeight}px; left: ${
+        e.pageX - rootRef.value?.offsetLeft
+      }px; top:0px; display:block;`
     );
   };
 
