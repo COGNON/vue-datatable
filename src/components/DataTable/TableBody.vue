@@ -13,9 +13,9 @@
         :handle-expand-icon="handleExpandIcon"
         @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
         @update-selected="$emit('updateSelected', row)"
-        @update-expanded="(idx) => $emit('updateExpanded', row)"
-        @click="(e: MouseEvent) => $emit('onRowClick',e,row)"
-        @dbl-click="(e: MouseEvent) => $emit('onRowDblClick',e,row)"
+        @update-expanded="$emit('updateExpanded', row)"
+        @click="$emit('onRowClick', $event, row)"
+        @dbl-click="$emit('onRowDblClick', $event, row)"
         @on-cell-click="(e, col) => $emit('onCellClick', e, col, row)"
         @on-cell-dbl-click="(e, col) => $emit('onCellDblClick', e, col, row)"
       >
@@ -53,7 +53,7 @@ import ExpandRow from './ExpandRow.vue';
 defineProps<{
   rows: VRow[];
   rowKey: string;
-  columns: VColumn[];
+  columns: Required<VColumn>[];
   rowHeight: number;
   colWidths: number;
   selection: VSelectionModes;
@@ -64,12 +64,12 @@ defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'updateExpandedHeight', changeHeight: number): void;
-  (e: 'updateSelected', row: VRow): void;
-  (e: 'updateExpanded', row: VRow): void;
-  (e: 'onRowClick', event: MouseEvent, row: VRow): void;
-  (e: 'onRowDblClick', event: MouseEvent, row: VRow): void;
-  (e: 'onCellClick', event: MouseEvent, col: VColumn, row: VRow): void;
-  (e: 'onCellDblClick', event: MouseEvent, col: VColumn, row: VRow): void;
+  updateExpandedHeight: [changeHeight: number];
+  updateSelected: [row: VRow];
+  updateExpanded: [row: VRow];
+  onRowClick: [event: MouseEvent, row: VRow];
+  onRowDblClick: [event: MouseEvent, row: VRow];
+  onCellClick: [event: MouseEvent, col: VColumn, row: VRow];
+  onCellDblClick: [event: MouseEvent, col: VColumn, row: VRow];
 }>();
 </script>

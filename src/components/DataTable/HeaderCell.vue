@@ -3,7 +3,7 @@
     <div
       v-if="resizableColumns && col.resizable"
       class="vdt--th-resizer"
-      @mousedown.stop.left="(e: MouseEvent) => $emit('onResizeStart', e)"
+      @mousedown.stop.left="$emit('onResizeStart', $event)"
     />
 
     <div
@@ -49,8 +49,8 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'updateSorter', event: MouseEvent): void;
-  (e: 'onResizeStart', event: MouseEvent): void;
+  updateSorter: [event: MouseEvent];
+  onResizeStart: [event: MouseEvent];
 }>();
 
 const sorterIdx = computed(() => findSorterIndex(props.sorters, props.col.colId));

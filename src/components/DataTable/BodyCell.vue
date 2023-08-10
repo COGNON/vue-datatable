@@ -3,8 +3,8 @@
     class="vdt--cell"
     :aria-colcount="colIdx + 1"
     tabindex="-1"
-    @click="(e: MouseEvent) => $emit('onCellClick',e)"
-    @dbl-click="(e:MouseEvent) => $emit('onCellDblClick',e)"
+    @click="$emit('onCellClick', $event)"
+    @dbl-click="$emit('onCellDblClick', $event)"
   >
     <slot name="body-cell" :col="col" :row="row" :value="value" :col-index="colIdx">
       {{ value }}
@@ -23,8 +23,8 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'onCellClick', event: MouseEvent): void;
-  (e: 'onCellDblClick', event: MouseEvent): void;
+  onCellClick: [event: MouseEvent];
+  onCellDblClick: [event: MouseEvent];
 }>();
 
 const value = computed(() => {

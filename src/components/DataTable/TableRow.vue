@@ -24,8 +24,8 @@
         :row="row"
         :style="{ width: `${col.width}px`, textAlign: col.align }"
         :class="extraClasses.cell"
-        @on-cell-click="(e) => $emit('onCellClick', e, col)"
-        @on-cell-dbl-click="(e) => $emit('onCellDblClick', e, col)"
+        @on-cell-click="$emit('onCellClick', $event, col)"
+        @on-cell-dbl-click="$emit('onCellDblClick', $event, col)"
       >
         <!-- specific body cell slot takes precedence -->
         <template v-if="$slots[`body-cell-${col.colId}`]" #body-cell="slotProps">
@@ -57,11 +57,11 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'updateExpandedHeight', changeHeight: number): void;
-  (e: 'updateSelected'): void;
-  (e: 'updateExpanded', row: VRow): void;
-  (e: 'onCellClick', event: MouseEvent, col: VColumn): void;
-  (e: 'onCellDblClick', event: MouseEvent, col: VColumn): void;
+  updateExpandedHeight: [changeHeight: number];
+  updateSelected: [];
+  updateExpanded: [row: VRow];
+  onCellClick: [event: MouseEvent, col: VColumn];
+  onCellDblClick: [event: MouseEvent, col: VColumn];
 }>();
 
 const expandRow = () => emit('updateExpanded', props.row);

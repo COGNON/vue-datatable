@@ -1,5 +1,5 @@
 <template>
-  <tr>
+  <tr ref="expandRef">
     <td :colspan="colNum">
       <slot name="expanded" :row="row" />
     </td>
@@ -11,7 +11,7 @@ import { computed, onUnmounted, ref, watch } from 'vue';
 import { VRow } from '../types';
 
 const props = defineProps<{ row: VRow; expanded: boolean; colNum: number }>();
-const emit = defineEmits<{ (e: 'updateExpandedHeight', changeHeight: number): void }>();
+const emit = defineEmits<{ updateExpandedHeight: [changeHeight: number] }>();
 
 const expandRef = ref<HTMLElement | undefined>();
 const expandedHeight = computed(() => expandRef.value?.clientHeight || 0);

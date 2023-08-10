@@ -23,13 +23,17 @@
         :draggable="reorderableColumns ? true : null"
         :sorters="sorters"
         @update-sorter="(e) => $emit('updateSorter', e, col.colId)"
-        @on-resize-start="(e: MouseEvent) => $emit('onResizeStart', e, col)"
-        @dragstart.stop="(e:DragEvent) => $emit('onDragStart',e)"
-        v-on="reorderableColumns ? {
-              dragend: (e:DragEvent) => $emit('onDragEnd', e),
-              dragover: (e:DragEvent) => $emit('onDragOver', e),
-              drop: (e:DragEvent) => $emit('onDrop',e)
-            } : {}"
+        @on-resize-start="$emit('onResizeStart', $event, col)"
+        @dragstart.stop="$emit('onDragStart', $event)"
+        v-on="
+          reorderableColumns
+            ? {
+                dragend: $emit('onDragEnd', $event),
+                dragover: $emit('onDragOver', $event),
+                drop: $emit('onDrop', $event)
+              }
+            : {}
+        "
       >
         <!-- specific header cell slot takes precedence -->
         <template v-if="$slots[`header-cell-${col.colId}`]" #header-cell="slotProps">
@@ -81,14 +85,14 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'updateSorter', event: MouseEvent, field: string): void;
-  (e: 'updateFilter', field: string, val: string | null): void;
-  (e: 'onResizeStart', event: MouseEvent, col: VColumn): void;
-  (e: 'onDragStart', event: DragEvent): void;
-  (e: 'onDragEnd', event: DragEvent): void;
-  (e: 'onDragOver', event: DragEvent): void;
-  (e: 'onDrop', event: DragEvent): void;
-  (e: 'selectAll', selected: boolean): void;
+  updateSorter: [event: MouseEvent, field: string];
+  updateFilter: [field: string, val: string | null];
+  onResizeStart: [event: MouseEvent, col: VColumn];
+  onDragStart: [event: DragEvent];
+  onDragEnd: [event: DragEvent];
+  onDragOver: [event: DragEvent];
+  onDrop: [event: DragEvent];
+  selectAll: [selected: boolean];
 }>();
 
 const allSelected = computed(() => props.selected.length === props.totalRowCount);
