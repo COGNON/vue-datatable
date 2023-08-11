@@ -1,15 +1,16 @@
 import type { VColumn, VFilter, VSorter, VState } from '../components/types';
 
 export default function useSaveState() {
-  function getState(columns: VColumn[], sorters: VSorter[], filters: VFilter): VState {
+  function getState(columns: Required<VColumn>[], sorters: VSorter[], filters: VFilter): VState {
+    console.log(columns);
     const saveCols = columns.map((col) => {
-      return { name: col.name, width: col.width || 150 };
+      return { colId: col.colId, width: col.width || 150 };
     });
 
     return {
       columns: saveCols,
       sorters: sorters,
-      filters: filters,
+      filters: filters
     };
   }
 

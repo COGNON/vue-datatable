@@ -1,52 +1,86 @@
 <template>
-  <div class="row items-center">
+  <div class="vdt--paginator">
     Rows Per Page:
-    <!-- <q-select
+    <select
       v-if="pagination.pageOptions"
-      :model-value="pagination.rowsPerPage"
-      class="q-px-sm"
-      dense
-      borderless
-      :options="pagination.pageOptions"
-      options-dense
-      @update:model-value="(val) => $emit('updateRowsPerPage', val)"
-    /> -->
+      v-model.number="pagination.rowsPerPage"
+      class="vdt--rpp-select"
+    >
+      <option v-for="n in pagination.pageOptions" :key="n">{{ n }}</option>
+    </select>
 
-    <div v-if="pagination.rowsPerPage">
+    <template v-if="pagination.rowsPerPage">
       {{ endRowNum - pagination.rowsPerPage + 1 }} to {{ actualCurEnd }} of
       {{ totalRowCount }}
-      <span :class="`${iconCls} mdi-chevron-double-left`" @click="$emit('updatePage', 0)" />
-      <span :class="`${iconCls} mdi-chevron-left`" @click="$emit('updatePage', currentPage - 1)" />
-      Page {{ currentPage + 1 }}
-      <span :class="`${iconCls} mdi-chevron-right`" @click="$emit('updatePage', currentPage + 1)" />
-      <span
-        :class="`${iconCls} mdi-chevron-double-right`"
-        @click="$emit('updatePage', totalPageNum - 1)"
+      <svg-icon
+        :class="currentPage === 0 ? disabledCls : iconCls"
+        type="mdi"
+        :path="mdiChevronDoubleLeft"
+        @click="currentPage === 0 ? null : $emit('updatePage', 0)"
       />
-    </div>
+      <svg-icon
+        :class="currentPage === 0 ? disabledCls : iconCls"
+        type="mdi"
+        :path="mdiChevronLeft"
+        @click="currentPage === 0 ? null : $emit('updatePage', currentPage - 1)"
+      />
+      Page {{ currentPage + 1 }} of {{ totalPageNum + 1 }}
+      <svg-icon
+        :class="currentPage === totalPageNum ? disabledCls : iconCls"
+        type="mdi"
+        :path="mdiChevronRight"
+        @click="currentPage === totalPageNum ? null : $emit('updatePage', currentPage + 1)"
+      />
+      <svg-icon
+        :class="currentPage === totalPageNum ? disabledCls : iconCls"
+        type="mdi"
+        :path="mdiChevronDoubleRight"
+        @click="currentPage === totalPageNum ? null : $emit('updatePage', totalPageNum)"
+      />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { VPagination } from '../types'
+import { computed } from 'vue';
+import { VPagination } from '../types';
+import SvgIcon from '@jamescoyle/vue-icon';
+import {
+  mdiChevronDoubleLeft,
+  mdiChevronDoubleRight,
+  mdiChevronLeft,
+  mdiChevronRight
+} from '@mdi/js';
 
 const props = defineProps<{
-  currentPage: number
-  totalPageNum: number
-  totalRowCount: number
-  pagination: VPagination
-}>()
+  currentPage: number;
+  totalPageNum: number;
+  totalRowCount: number;
+}>();
 
-defineEmits<{
-  (e: 'updatePage', page: number): void
-  (e: 'updateRowsPerPage', val: number): void
-}>()
+defineEmits<{ (e: 'updatePage', page: number): void }>();
 
-const endRowNum = computed(() => props.pagination.rowsPerPage * (props.currentPage + 1))
+const pagination = defineModel<VPagination>('pagination');
+
+const endRowNum = computed(() => pagination.value.rowsPerPage * (props.currentPage + 1));
 const actualCurEnd = computed(() =>
   endRowNum.value > props.totalRowCount ? props.totalRowCount : endRowNum.value
-)
+);
 
-const iconCls = 'vdt--clickable mdi'
+const iconCls = 'vdt--clickable';
+const disabledCls = 'vdt--no-page';
 </script>
+
+<style scoped>
+.vdt--paginator {
+  display: flex;
+  align-items: center;
+}
+.vdt--rpp-select {
+  padding: 0px 5px;
+  margin: 0px 5px;
+}
+.vdt--no-page {
+  color: rgba(235, 235, 235, 0.2);
+}
+</style>

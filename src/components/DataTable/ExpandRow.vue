@@ -1,17 +1,24 @@
 <template>
-  <tr>
-    <slot name="expanded" :row="row" />
+  <tr ref="expandRef">
+    <td :colspan="colNum" class="vdt--expand-row">
+      <slot name="expanded" :row="row" />
+    </td>
   </tr>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { VRow } from '../types'
+import { computed, onUnmounted, ref, watch } from 'vue';
+import { VRow } from '../types';
 
-const props = defineProps<{ row: VRow; expanded: boolean }>()
-const emit = defineEmits<{ (e: 'updateExpandedHeight', changeHeight: number): void }>()
+const props = defineProps<{ row: VRow; expanded: boolean; colNum: number }>();
+const emit = defineEmits<{ updateExpandedHeight: [changeHeight: number] }>();
 
-const expandRef = ref<HTMLElement | undefined>()
-const expandedHeight = computed(() => expandRef.value?.clientHeight || 0)
-watch(expandedHeight, (newH, oldH) => emit('updateExpandedHeight', props.expanded ? newH : -oldH))
+const expandRef = ref<HTMLElement | undefined>();
+const expandedHeight = computed(() => expandRef.value?.clientHeight || 0);
+
+// manage adjusting the grid height when the row is expanded
+watch(expandedHeight, (newH, oldH) => emit('updateExpandedHeight', props.expanded ? newH : -oldH));
+
+// emits event needed to adjust the grid height smaller when the row is collapased
+onUnmounted(() => emit('updateExpandedHeight', -expandedHeight.value));
 </script>
