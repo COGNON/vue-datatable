@@ -2,7 +2,7 @@
   <div
     ref="scrollerRef"
     :style="{ overflowY: overflowStyle }"
-    class="vdt--scroller"
+    class="vdt--scroller vdt--custom-scrollbar"
     role="presentation"
     @scroll="onVScroll"
   >
@@ -17,17 +17,10 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue';
 import { VirtualScrollerProps } from '../types';
 import useVirtualScroll from '../../composables/useVirtualScroll';
 
 const props = defineProps<VirtualScrollerProps>();
-
-// reset the scroll on page change back to the top
-watch(
-  () => props.currentPage,
-  () => (scrollerRef.value.scrollTop = 0)
-);
 
 const {
   visibleRows,
@@ -41,9 +34,26 @@ const {
 } = useVirtualScroll(props);
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .vdt--scroller {
   position: relative;
   overflow-x: auto;
+}
+.vdt--custom-scrollbar {
+  &::-webkit-scrollbar {
+    $size: 10px;
+    width: $size;
+    height: $size;
+  }
+  &::-webkit-scrollbar-corner,
+  &::-webkit-scrollbar-track {
+    background-color: var(--vt-c-black-mute);
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--vt-c-text-dark-2);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vt-c-text-dark-1);
+  }
 }
 </style>

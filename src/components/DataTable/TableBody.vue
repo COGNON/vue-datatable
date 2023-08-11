@@ -14,8 +14,8 @@
         @update-expanded-height="(val) => $emit('updateExpandedHeight', val)"
         @update-selected="$emit('updateSelected', row)"
         @update-expanded="$emit('updateExpanded', row)"
-        @click="$emit('onRowClick', $event, row)"
-        @dbl-click="$emit('onRowDblClick', $event, row)"
+        @click="(e) => $emit('onRowClick', e, row)"
+        @dbl-click="(e) => $emit('onRowDblClick', e, row)"
         @on-cell-click="(e, col) => $emit('onCellClick', e, col, row)"
         @on-cell-dbl-click="(e, col) => $emit('onCellDblClick', e, col, row)"
       >

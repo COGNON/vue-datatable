@@ -24,8 +24,8 @@
         :row="row"
         :style="{ width: `${col.width}px`, textAlign: col.align }"
         :class="extraClasses.cell"
-        @on-cell-click="$emit('onCellClick', $event, col)"
-        @on-cell-dbl-click="$emit('onCellDblClick', $event, col)"
+        @on-cell-click="(e) => $emit('onCellClick', e, col)"
+        @on-cell-dbl-click="(e) => $emit('onCellDblClick', e, col)"
       >
         <!-- specific body cell slot takes precedence -->
         <template v-if="$slots[`body-cell-${col.colId}`]" #body-cell="slotProps">

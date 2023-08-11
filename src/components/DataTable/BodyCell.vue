@@ -3,8 +3,8 @@
     class="vdt--cell"
     :aria-colcount="colIdx + 1"
     tabindex="-1"
-    @click="$emit('onCellClick', $event)"
-    @dbl-click="$emit('onCellDblClick', $event)"
+    @click="(e) => $emit('onCellClick', e)"
+    @dbl-click="(e) => $emit('onCellDblClick', e)"
   >
     <slot name="body-cell" :col="col" :row="row" :value="value" :col-index="colIdx">
       {{ value }}

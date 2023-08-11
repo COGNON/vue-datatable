@@ -23,14 +23,14 @@
         :draggable="reorderableColumns ? true : null"
         :sorters="sorters"
         @update-sorter="(e) => $emit('updateSorter', e, col.colId)"
-        @on-resize-start="$emit('onResizeStart', $event, col)"
-        @dragstart.stop="$emit('onDragStart', $event)"
+        @on-resize-start="(e) => $emit('onResizeStart', e, col)"
+        @dragstart.stop="(e) => $emit('onDragStart', e)"
         v-on="
           reorderableColumns
             ? {
-                dragend: $emit('onDragEnd', $event),
-                dragover: $emit('onDragOver', $event),
-                drop: $emit('onDrop', $event)
+                dragend: (e) => $emit('onDragEnd', e),
+                dragover: (e) => $emit('onDragOver', e),
+                drop: (e) => $emit('onDrop', e)
               }
             : {}
         "

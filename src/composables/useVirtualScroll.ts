@@ -5,6 +5,12 @@ export default function useVirtualScroll(props: VirtualScrollerProps) {
   const scrollerRef = ref<HTMLElement | null>(null);
   const scrollTop = ref(0);
 
+  // reset the scroll on page change back to the top
+  watch(
+    () => props.currentPage,
+    () => (scrollerRef.value.scrollTop = 0)
+  );
+
   const onVScroll = (event: Event) => {
     const target = event.target as HTMLElement;
     scrollTop.value = target.scrollTop;
