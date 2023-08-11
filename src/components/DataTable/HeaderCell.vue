@@ -13,7 +13,7 @@
       />
     </slot>
 
-    <template v-if="col.expandColumn"></template>
+    <template v-else-if="col.expandColumn"></template>
 
     <template v-else>
       <div

@@ -60,6 +60,13 @@
           :class="[cellBorderCls, hoverCls, stripedCls, 'vdt--table']"
           :style="{ height: `${tableHeight}px`, minHeight: `${height}px`, width: `${colWidths}px` }"
         >
+          <colgroup>
+            <col
+              v-for="col in processedColumns"
+              :key="col.colId"
+              :style="{ width: `${col.width}px`, minWidth: `${col.width}px` }"
+            />
+          </colgroup>
           <table-header
             :columns="processedColumns"
             :scroll-left="scrollLeft"

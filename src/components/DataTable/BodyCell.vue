@@ -71,4 +71,7 @@ const expandRow = () => emit('updateExpanded');
     transition: background-color 0.2s;
   }
 }
+.vdt--row-select {
+  margin: 0px auto;
+}
 </style>

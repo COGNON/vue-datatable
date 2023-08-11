@@ -6,7 +6,7 @@
         :key="col.colId"
         :col="col"
         :aria-colindex="colIdx + 1"
-        :style="{ width: `${col.width}px`, textAlign: col.align }"
+        :style="{ textAlign: col.align }"
         :class="extraClasses.headerCell"
         :resizable-columns="resizableColumns"
         :draggable="reorderableColumns ? true : null"

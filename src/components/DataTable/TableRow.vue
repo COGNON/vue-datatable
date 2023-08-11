@@ -10,7 +10,7 @@
         :col-idx="colIdx"
         :col="col"
         :row="row"
-        :style="{ width: `${col.width}px`, textAlign: col.align }"
+        :style="{ textAlign: col.align }"
         :class="extraClasses.cell"
         :selected="selected"
         :expanded="expanded"
