@@ -278,6 +278,15 @@ function processColumns(columns: VColumn[]): Required<VColumn>[] {
       updateFilter(col.field, col.filter);
     }
 
+    if (col.checkboxColumn || col.expandColumn) {
+      // default for "non value" columns is center-align
+      col.align = 'center';
+      // no filter, sorting, resizing
+      col.filterable = false;
+      col.sortable = false;
+      col.resizable = false;
+    }
+
     const colId = col.colId
       ? col.colId
       : typeof col.field === 'string'
@@ -363,7 +372,7 @@ const colWidths = computed(() => {
 // );
 </script>
 
-<style>
+<style lang="scss">
 .vdt--clickable {
   cursor: pointer;
 }
@@ -450,7 +459,7 @@ const colWidths = computed(() => {
 .vdt--cell-borders .vdt--cell,
 .vdt--row-borders .vdt--cell,
 .vdt--row-borders .vdt--th,
-.vdt--row-expanded {
+.vdt--expand-row {
   border-color: rgba(255, 255, 255, 0.6);
 }
 .vdt--th,
@@ -458,26 +467,30 @@ const colWidths = computed(() => {
   position: relative;
   padding: 5px;
 }
-.vdt--cell-borders.vdt--row-borders .vdt--th,
-.vdt--cell-borders.vdt--row-borders .vdt--cell {
-  border-style: solid;
-  border-width: 0 1px 1px 0;
+.vdt--cell-borders.vdt--row-borders {
+  .vdt--th,
+  .vdt--cell {
+    border-style: solid;
+    border-width: 0 1px 1px 0;
+  }
 }
 .vdt--row-borders .vdt--th,
-.vdt--row-borders .vdt--cell {
+.vdt--row-borders .vdt--cell,
+.vdt--expand-row {
   border-style: solid;
   border-width: 0 0 1px 0;
 }
-.vdt--cell-borders .vdt--th,
-.vdt--cell-borders .vdt--cell {
-  border-style: solid;
-  border-width: 0 1px 0 0;
+.vdt--cell-borders {
+  .vdt--th,
+  .vdt--cell {
+    border-style: solid;
+    border-width: 0 1px 0 0;
+  }
 }
 .vdt--th {
   overflow: hidden;
 }
-.vdt--th-extra,
-.vdt--cell-extra {
+.vdt--th-extra {
   width: 60px;
   text-align: center;
 }

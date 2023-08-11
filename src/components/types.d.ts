@@ -40,6 +40,7 @@ export type VColumn<T = Record<string, string>> = {
   sort?: SortDir;
   filter?: string;
   checkboxColumn?: boolean;
+  expandColumn?: boolean;
 };
 
 export type VRow<T = Record<string, any>> = {

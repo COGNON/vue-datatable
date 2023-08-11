@@ -1,17 +1,6 @@
 <template>
   <thead class="vdt--thead">
     <tr :class="`vdt--thead-tr ${extraClasses.headerRow}`">
-      <th v-if="selection !== 'none'" class="vdt--th vdt--th-extra">
-        <slot name="header-selection" :all-selected="allSelected" :select-all="selectAll">
-          <vdt-checkbox
-            v-if="allowSelectAll && selection === 'multiple'"
-            :model-value="allSelected"
-            @update:model-value="selectAll"
-          />
-        </slot>
-      </th>
-      <th v-if="$slots['expanded']" class="vdt--th vdt--th-extra" />
-
       <header-cell
         v-for="(col, colIdx) in columns"
         :key="col.colId"
@@ -21,7 +10,12 @@
         :class="extraClasses.headerCell"
         :resizable-columns="resizableColumns"
         :draggable="reorderableColumns ? true : null"
+        :total-row-count="totalRowCount"
+        :selection="selection"
+        :selected="selected"
+        :allow-select-all="allowSelectAll"
         :sorters="sorters"
+        @select-all="(val) => $emit('selectAll', val)"
         @update-sorter="(e) => $emit('updateSorter', e, col.colId)"
         @on-resize-start="(e) => $emit('onResizeStart', e, col)"
         @dragstart.stop="(e) => $emit('onDragStart', e)"
@@ -63,13 +57,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import type { VRow, VColumn, VFilter, VSorter, VSelectionModes, VExtraClasses } from '../types';
 import HeaderCell from './HeaderCell.vue';
-import VdtCheckbox from './VdtCheckbox.vue';
 import VdtInput from './VdtInput.vue';
 
-const props = defineProps<{
+defineProps<{
   scrollLeft: number;
   columns: Required<VColumn>[];
   rowHeight: number;
@@ -94,9 +86,6 @@ const emit = defineEmits<{
   onDrop: [event: DragEvent];
   selectAll: [selected: boolean];
 }>();
-
-const allSelected = computed(() => props.selected.length === props.totalRowCount);
-const selectAll = (val: boolean) => emit('selectAll', val);
 
 const updateFilter = (field: string, val: string) => emit('updateFilter', field, val);
 </script>

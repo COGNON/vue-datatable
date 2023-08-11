@@ -4,18 +4,6 @@
     :class="`${row.index % 2 ? 'vdt--row-even' : 'vdt--row-odd'} ${selectedCls}`"
   >
     <slot name="body-row" :row="row" :columns="columns" :row-index="row.index">
-      <td v-if="selection !== 'none'" class="vdt--cell vdt--cell-extra">
-        <slot name="body-selection" :row="row" :selected="selected" :select-row="selectRow">
-          <vdt-checkbox :model-value="selected" dense @update:model-value="selectRow" />
-        </slot>
-      </td>
-
-      <td v-if="$slots['expanded']" class="vdt--cell vdt--cell-extra">
-        <slot name="expanded-icon" :row="row" :expanded="expanded" :expand-row="expandRow">
-          <!-- <q-btn v-if="!handleExpandIcon" :icon="expandIcon" round size="xs" @click="expandRow" /> -->
-        </slot>
-      </td>
-
       <body-cell
         v-for="(col, colIdx) in columns"
         :key="colIdx"
@@ -24,8 +12,12 @@
         :row="row"
         :style="{ width: `${col.width}px`, textAlign: col.align }"
         :class="extraClasses.cell"
-        @on-cell-click="(e) => $emit('onCellClick', e, col)"
-        @on-cell-dbl-click="(e) => $emit('onCellDblClick', e, col)"
+        :selected="selected"
+        :expanded="expanded"
+        @click="(e: MouseEvent) => $emit('onCellClick', e, col)"
+        @dbl-click="(e: MouseEvent) => $emit('onCellDblClick', e,col)"
+        @update-selected="$emit('updateSelected')"
+        @update-expanded="$emit('updateExpanded', row)"
       >
         <!-- specific body cell slot takes precedence -->
         <template v-if="$slots[`body-cell-${col.colId}`]" #body-cell="slotProps">
@@ -33,6 +25,9 @@
         </template>
         <template v-else-if="$slots['body-cell']" #body-cell="slotProps">
           <slot name="body-cell" v-bind="slotProps" :row-index="row.index" />
+        </template>
+        <template v-else-if="$slots['expanded-icon']" #expanded-icon="slotProps">
+          <slot name="expanded-icon" v-bind="slotProps" />
         </template>
       </body-cell>
     </slot>
@@ -43,7 +38,6 @@
 import { computed } from 'vue';
 import { VSelectionModes, VColumn, VExtraClasses, VRow } from '../types';
 import BodyCell from './BodyCell.vue';
-import VdtCheckbox from './VdtCheckbox.vue';
 
 const props = defineProps<{
   row: VRow;
@@ -56,7 +50,7 @@ const props = defineProps<{
   handleExpandIcon: boolean;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   updateExpandedHeight: [changeHeight: number];
   updateSelected: [];
   updateExpanded: [row: VRow];
@@ -64,9 +58,5 @@ const emit = defineEmits<{
   onCellDblClick: [event: MouseEvent, col: VColumn];
 }>();
 
-const expandRow = () => emit('updateExpanded', props.row);
-const expandIcon = computed(() => (props.expanded ? 'mdi-minus' : 'mdi-plus'));
-
-const selectRow = () => emit('updateSelected');
 const selectedCls = computed(() => (props.selected ? 'vdt--row-selected' : ''));
 </script>

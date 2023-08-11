@@ -1,6 +1,6 @@
 <template>
   <tr ref="expandRef">
-    <td :colspan="colNum">
+    <td :colspan="colNum" class="vdt--expand-row">
       <slot name="expanded" :row="row" />
     </td>
   </tr>

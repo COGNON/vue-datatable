@@ -40,6 +40,16 @@ const pagination = ref({
 const rows = ref(data);
 const columns1: VColumn[] = [
   {
+    colId: 'select',
+    width: 50,
+    checkboxColumn: true
+  },
+  {
+    colId: 'expand',
+    width: 50,
+    expandColumn: true
+  },
+  {
     field: '_id',
     header: 'ID',
     width: 150,
